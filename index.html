@@ -285,48 +285,24 @@ function triggerCamera(t) {
   setTimeout(() => { btn.innerText = originalText; }, 3000);
 }
 
-function handleCapture(input) {
-  if (!input.files[0]) return;
-  const loading = document.getElementById("loading");
-  loading.innerHTML = "<b>🔒 正在加密並上傳資料...</b>";
-  loading.style.display = "flex";
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      const maxW = 500; 
-      canvas.width = maxW;
-      canvas.height = img.height * (maxW / img.width);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const data = canvas.toDataURL("image/jpeg", 0.4);
-      const detail = selectedSchedule[4] + " [" + selectedSchedule[1] + "]";
-      const now = new Date();
-      const hkt = new Intl.DateTimeFormat('en-GB', {
-        year: '2-digit', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false, timeZone: 'Asia/Hong_Kong'
-      }).format(now);
-      document.getElementById("successType").innerText = clockType + "成功";
-      document.getElementById("successTime").innerText = hkt;
-      document.getElementById("successDetail").innerHTML = `<b style="color:var(--primary); font-size:18px;">${selectedSchedule[3]}</b><br>${selectedSchedule[4]}`;
-      setTimeout(() => {
-        showBox('successBox');
-        loading.style.display = "none";
-        google.script.run.withSuccessHandler(() => {
-          google.script.run.withSuccessHandler(newData => {
-            cachedData = newData; renderUI();
-          }).getAllUserData(currentUser);
-        }).saveRecord(currentUser, selectedSchedule[3], clockType, detail, data);
-      }, 1500); 
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(input.files[0]);
-  input.value = "";
-}
+fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "save", name: currentUser, location: selectedSchedule[3], type: clockType, detail: detail, image: dataUrl })
+      }).then(r => r.json()).then(res => {
+          // 直接用回傳嘅時間顯示成功畫面
+          document.getElementById("successType").innerText = clockType + "成功";
+          document.getElementById("successTime").innerText = res.time;
+          document.getElementById("successDetail").innerHTML = `<b>${selectedSchedule[3]}</b><br>${selectedSchedule[4]}`;
+          showBox('successBox');
+          loading.style.display = "none";
 
+          // 【加速關鍵】唔好再 fetch refresh，直接喺本地改個標記
+          const timeStr = selectedSchedule[1] || "";
+          const eventName = selectedSchedule[4] || "";
+          const uniqueKey = eventName + " [" + timeStr + "]";
+          cachedData.records.push([res.time.split(' ')[0], currentUser, selectedSchedule[3], clockType, res.time, uniqueKey]);
+          renderUI(); // 咁樣「今日更次」個 ✅ 掣就會即刻出咗嚟，唔使等 Google
+      });
 function startRecordFlow() {
   if(!cachedData || !cachedData.records || cachedData.records.length === 0) {
     alert("暫無打卡紀錄"); return;
