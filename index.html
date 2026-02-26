@@ -1,106 +1,149 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>SWS/OPS員工打卡系統</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDTT86mpGJJMByToRMi7b8jjI0LoNJarNo",
-      authDomain: "sws-ops.firebaseapp.com",
-      projectId: "sws-ops",
-      storageBucket: "sws-ops.firebasestorage.app",
-      messagingSenderId: "985280948590",
-      appId: "1:985280948590:web:3aad1539136659b4dc797f",
-      measurementId: "G-3SJVX49Q9C"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // 登入邏輯
-    window.doLogin = async () => {
-      const name = document.getElementById('name').value.trim();
-      const pin = document.getElementById('pin').value.trim();
-      const btn = document.querySelector('button');
-      
-      if(!name || !pin) { alert('請填寫姓名及PIN'); return; }
-      
-      btn.disabled = true;
-      btn.innerText = '驗證中...';
-
-      try {
-        const q = query(collection(db, "employees"), where("name", "==", name), where("pin", "==", pin));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const userData = querySnapshot.docs[0].data();
-          localStorage.setItem('sws_user', JSON.stringify(userData));
-          alert('登入成功！');
-          // 登入成功後跳轉或顯示主頁 (呢度暫時同舊版一樣處理)
-          document.getElementById('loginDiv').classList.add('hidden');
-          document.getElementById('mainDiv').classList.remove('hidden');
-          document.getElementById('displayUserName').innerText = userData.name;
-        } else {
-          alert('姓名或PIN不正確');
-        }
-      } catch (e) {
-        alert('連線失敗: ' + e.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = '登入系統';
-      }
-    };
-
-    window.onload = () => {
-      const saved = localStorage.getItem('sws_user');
-      if(saved) {
-        const userData = JSON.parse(saved);
-        document.getElementById('loginDiv').classList.add('hidden');
-        document.getElementById('mainDiv').classList.remove('hidden');
-        document.getElementById('displayUserName').innerText = userData.name;
-      }
-    };
-  </script>
-
-  <style>
-    body { background-color: #f0f2f5; margin: 0; font-family: sans-serif; }
-    .header { background: #1a73e8; color: white; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; }
-    .container { padding: 20px; max-width: 500px; margin: auto; }
-    .card { background: white; padding: 20px; border-radius: 8px; shadow-sm: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-    button { width: 100%; background: #1a73e8; color: white; padding: 14px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
-    button:disabled { background: #ccc; }
-    .user-info { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
-  </style>
+<html><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SWS/OPS員工打卡系統</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968313.png">
+<style>:root { --primary: #000; --bg: #f2f2f7; --success: #34c759; --blue: #007aff; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin:0; font-family:-apple-system, 'SF Pro Display', sans-serif; background: var(--bg); color: #1c1c1e; }
+.card {background:white; width:92%; max-width:400px; padding:25px;
+border-radius:28px; box-shadow:0 10px 30px rgba(0,0,0,0.08);
+text-align:center; margin: 20px auto; display: none;
+}.active { display: block !important; animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+h2 { margin-bottom:20px; font-size:22px; font-weight:700; }
+button { width:100%; padding:18px; border-radius:16px; border:none; background:var(--primary); color:white; font-size:16px; font-weight:600; margin-top:10px; cursor:pointer; }
+button:active { opacity: 0.7; transform: scale(0.98); }
+button:disabled { background: #ccc !important; }
+.secondary { background:#e5e5e7; color:#000; }
+.home-link { color: var(--blue); cursor: pointer; display: block; margin-top: 15px; font-size: 15px; font-weight: 600; text-decoration: none; }
+#btnIn { background: #FFFBCC; color: #856404; border: 1px solid #ffeeba; }
+#btnOut { background: #CCE5FF; color: #004085; border: 1px solid #b8daff; }
+.menu-btn { text-align:left; padding:18px; background:#fff; margin-bottom:12px; border-radius:18px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+.record-item { text-align:left; padding:15px; border-bottom:1px solid #f2f2f7; font-size:14px; position: relative; }
+.tag { font-size:11px; padding:4px 10px; border-radius:8px; font-weight:800; display: inline-block; min-width: 50px; text-align: center; }
+.tag-in { background: #FFFBCC; color: #856404; border: 0.5px solid #ffeeba; }
+.tag-out { background: #CCE5FF; color: #004085; border: 0.5px solid #b8daff; }
+input, textarea { width:100%; padding:18px; margin-bottom:15px; border-radius:16px; border:1.5px solid #d1d1d6; font-size:16px; outline:none; }
+.loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(3px); }
+.big-check { font-size: 70px; margin-bottom: 10px; }
+.date-group { border: 1px solid #e5e5e7; border-radius: 12px; margin-bottom: 10px; overflow: hidden; background: #fff; }
+.date-header { background: #f9f9fb; padding: 15px; text-align: left; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.date-content { display: none; padding: 0 15px; background: #fff; border-top: 1px solid #eee; }
+.date-content.open { display: block; }
+</style>
 </head>
 <body>
 
-  <div class="header">SWS/OPS員工打卡系統</div>
+<div id="loading" class="loading-overlay"><b>⌛ 處理中...</b></div>
 
-  <div class="container">
-    <div id="loginDiv" class="card">
-      <h3 style="margin-top:0; text-align:center;">員工登入</h3>
-      <input type="text" id="name" placeholder="請輸入姓名">
-      <input type="password" id="pin" inputmode="numeric" placeholder="請輸入6位PIN碼">
-      <button onclick="doLogin()">登入系統</button>
-    </div>
+<div class="card active" id="loginBox">
+  <div style="font-size: 50px; margin-bottom: 15px;">💼</div>
+  <h2>SWS/OPS 打卡系統</h2>
+  <input id="name" placeholder="登入名稱" autocomplete="off">
+  <input id="pin" type="password" placeholder="PIN碼" inputmode="numeric">
+  <button id="loginBtn" onclick="doLogin()">登入系統</button>
+</div>
 
-    <div id="mainDiv" class="card hidden">
-      <div class="user-info">歡迎, <span id="displayUserName"></span></div>
-      <p style="color:#666; font-size:14px;">請選擇打卡動作：</p>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
-        <button style="background:#34a853;">返工打卡</button>
-        <button style="background:#ea4335;">放工打卡</button>
-      </div>
-      <button onclick="localStorage.clear(); location.reload();" style="background:#666; margin-top:20px; padding:8px; font-size:14px;">登出帳號</button>
-    </div>
-  </div>
+<div class="card" id="menuBox">
+  <h2 id="userHello">你好</h2>
+  <div class="menu-btn" onclick="showBox('clockInBox')"><div>📍 <b>我要打卡！</b></div><span>❯</span></div>
+  <div class="menu-btn" onclick="startSchedFlow()"><div>📅 <b>我想睇更！</b></div><span>❯</span></div>
+  <div class="menu-btn" onclick="startRecordFlow()"><div>📜 <b>打卡紀錄</b></div><span>❯</span></div>
+  <div class="menu-btn" onclick="showBox('supportBox')"><div>🛠️ <b>技術支援</b></div><span>❯</span></div>
+  <button class="secondary" onclick="doLogout()" style="margin-top:20px;">登出系統</button>
+</div>
 
+<div class="card" id="clockInBox"><h2>今日更次</h2><div id="todaySchedules"></div><button class="secondary" onclick="showBox('menuBox')">返回</button></div>
+<div class="card" id="typeBox"><h2 id="selectedJobTitle">地點</h2><input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleCapture(this)" style="display:none"><button id="btnIn" onclick="triggerCamera('翻工')">🌅 翻工打卡</button><button id="btnOut" onclick="triggerCamera('收工')">🌇 收工打卡</button><button class="secondary" onclick="showBox('clockInBox')">返回</button><a class="home-link" onclick="showBox('menuBox')">返回主頁</a></div>
+<div class="card" id="successBox"><div class="big-check">✅</div><h2 id="successType">打卡成功</h2><p id="successTime" style="font-size:20px; font-weight:bold; margin:10px 0;"></p><p id="successDetail" style="color:#666; font-size:14px;"></p><button onclick="showBox('menuBox')">返回主頁</button></div>
+<div class="card" id="recordLocBox"><h2>選擇紀錄地點</h2><div id="listRecordLoc"></div><button class="secondary" onclick="showBox('menuBox')">返回主頁</button></div>
+<div class="card" id="recordMonthBox"><h2 id="titleRecordYM">選擇月份</h2><div id="listRecordYM"></div><button class="secondary" onclick="showBox('recordLocBox')">返回</button></div>
+<div class="card" id="recordFinalBox"><h2 id="titleRecordFinal">打卡紀錄</h2><div id="listRecordFinal" style="max-height:450px; overflow-y:auto; padding:5px;"></div><button class="secondary" onclick="showBox('recordMonthBox')">返回</button></div>
+<div class="card" id="supportBox"><h2>技術支援</h2><textarea id="supportMsg" rows="4" placeholder="請輸入留言..."></textarea><button id="supportBtn" onclick="submitSupport()">提交留言</button><button class="secondary" onclick="showBox('menuBox')">返回</button></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDTT86mpGJJMByToRMi7b8jjI0LoNJarNo",
+    authDomain: "sws-ops.firebaseapp.com",
+    projectId: "sws-ops",
+    storageBucket: "sws-ops.firebasestorage.app",
+    messagingSenderId: "985280948590",
+    appId: "1:985280948590:web:3aad1539136659b4dc797f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let currentUserData = null;
+  let cachedRecords = [];
+
+  // --- 基礎導航 ---
+  window.showBox = (id) => {
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+  };
+
+  // --- 登入功能 (改用 Firebase) ---
+  window.doLogin = async () => {
+    const n = document.getElementById("name").value.trim();
+    const p = document.getElementById("pin").value.trim();
+    if(!n || !p) return;
+    
+    const btn = document.getElementById("loginBtn");
+    btn.innerText = "驗證中...";
+    btn.disabled = true;
+
+    try {
+      const q = query(collection(db, "employees"), where("name", "==", n), where("pin", "==", p));
+      const snap = await getDocs(q);
+      if(!snap.empty) {
+        currentUserData = snap.docs[0].data();
+        localStorage.setItem('sws_user', JSON.stringify(currentUserData));
+        startApp();
+      } else {
+        alert("姓名或PIN碼錯誤");
+        btn.innerText = "登入系統"; btn.disabled = false;
+      }
+    } catch(e) {
+      alert("連線錯誤");
+      btn.disabled = false;
+    }
+  };
+
+  function startApp() {
+    document.getElementById("userHello").innerText = "你好，" + currentUserData.name;
+    showBox('menuBox');
+    loadRecords(); // 非同步加載紀錄
+  }
+
+  // 加載打卡紀錄
+  async function loadRecords() {
+    const q = query(collection(db, "punch_logs"), where("name", "==", currentUserData.name), orderBy("timestamp", "desc"));
+    const snap = await getDocs(q);
+    cachedRecords = snap.docs.map(doc => doc.data());
+  }
+
+  window.doLogout = () => {
+    localStorage.removeItem('sws_user');
+    location.reload();
+  };
+
+  // 初始化檢查
+  const saved = localStorage.getItem('sws_user');
+  if(saved) {
+    currentUserData = JSON.parse(saved);
+    startApp();
+  }
+  
+  // 這裡需要繼續搬遷原本的 renderUI, startSchedFlow 等邏輯，
+  // 但為了先讓你測試登入速度，我們先確保登入能行！
+</script>
 </body>
 </html>
