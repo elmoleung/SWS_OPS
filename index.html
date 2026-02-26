@@ -337,7 +337,39 @@ window.selectJob = (i) => {
 };
 
 window.triggerCamera = (t) => {
-    clockType = t;
+    // --- 【Policy 檢查：未開相機前先擋住】 ---
+    const getHKToday = () => {
+        const d = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+        const d0 = String(d.getDate()).padStart(2, '0');
+        const m0 = String(d.getMonth() + 1).padStart(2, '0');
+        const y = d.getFullYear();
+        // 考慮到你 Sheet 格式同 JS 格式，做齊所有可能比對
+        return [`${d.getDate()}-${d.getMonth()+1}-${y}`, `${d0}-${m0}-${y}`, `${d.getDate()}/${d.getMonth()+1}/${y}`, `${d0}/${m0}/${y}`];
+    };
+
+    const hkTodayFormats = getHKToday();
+    const todayRecs = cachedData.records.filter(r => {
+        const recordDate = String(r[0]).trim();
+        return hkTodayFormats.some(f => recordDate === f);
+    });
+    
+    // 攞今日最後一個動作
+    const lastAction = todayRecs.length > 0 ? todayRecs[todayRecs.length - 1][3] : null;
+
+    // 條件一：第一筆一定要係「翻工」
+    if (t === "收工" && !lastAction) {
+        alert("⚠️ 錯誤：今日仲未有「翻工」紀錄，你必須先打翻工！");
+        return; // 直接截斷，唔會執行下面開相機嘅 Code
+    }
+
+    // 條件二：必須交替 (唔可以連續兩次翻工 或 連續兩次收工)
+    if (lastAction === t) {
+        alert("⚠️ 錯誤：你最後一筆紀錄已經係「" + lastAction + "」，請先打「" + (t === "翻工" ? "收工" : "翻工") + "」！");
+        return; // 直接截斷
+    }
+    // --- 【檢查完畢，通過先至准影相】 ---
+
+    clockType = t; // 確保呢度賦值正確
     const btn = t === '翻工' ? document.getElementById("btnIn") : document.getElementById("btnOut");
     const originalText = btn.innerText;
     btn.innerText = "📸 啟動相機中...";
