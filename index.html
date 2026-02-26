@@ -184,7 +184,7 @@ window.doLogin = async () => {
             document.getElementById("userHello").innerText = "你好，" + currentUser;
             window.showBox('menuBox');
         } else {
-            alert("姓名或PIN碼錯誤 (Firebase)");
+            alert("❌ 登入失敗：個名或者個PIN錯啊！");
             btn.innerText = "登入系統"; btn.disabled = false;
         }
     } catch(e) {
