@@ -200,15 +200,28 @@ function renderUI() {
     // 【超級兼容工具】只要日-月-年對得上，無論係 / 定 - 定有無補0都認到
     const isToday = (rd) => {
         if (!rd) return false;
-        const d = new Date();
-        const day = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
-        const r = String(rd);
-        const combinations = [
-            `${day}-${month}-${year}`, `${day}/${month}/${year}`,
-            `${String(day).padStart(2,'0')}-${String(month).padStart(2,'0')}-${year}`,
-            `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`
+        
+        // 【修正】強制轉做香港時間，確保深夜打卡都係 27 號
+        const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+        const r = String(rd).trim();
+        
+        const day = hkt.getDate();
+        const month = hkt.getMonth() + 1;
+        const year = hkt.getFullYear();
+
+        // 建立所有可能嘅香港今日格式 (27-2-2026, 27-02-2026 等)
+        const d0 = String(day).padStart(2, '0');
+        const m0 = String(month).padStart(2, '0');
+        
+        const formats = [
+            `${day}-${month}-${year}`,   // 27-2-2026
+            `${day}/${month}/${year}`,   // 27/2/2026
+            `${d0}-${m0}-${year}`,       // 27-02-2026 (你 Sheet 嗰隻)
+            `${d0}/${m0}/${year}`        // 27/02/2026
         ];
-        return combinations.some(fmt => r.includes(fmt));
+
+        // 用 === 完全比對，確保唔會認錯尋日
+        return formats.some(f => r === f);
     };
 
     if(!cachedData.todaySchedules || cachedData.todaySchedules.length === 0) {
@@ -282,18 +295,30 @@ window.selectJob = (i) => {
     const eventName = selectedSchedule[4] || "";
     const uniqueKey = eventName + " [" + timeStr + "]";
 
-    // 【超級兼容工具】同 renderUI 嗰邊對齊，認得返 27-02-2026
     const isToday = (rd) => {
         if (!rd) return false;
-        const d = new Date();
-        const day = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
-        const r = String(rd);
-        const combinations = [
-            `${day}-${month}-${year}`, `${day}/${month}/${year}`,
-            `${String(day).padStart(2,'0')}-${String(month).padStart(2,'0')}-${year}`,
-            `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`
+        
+        // 【修正】強制轉做香港時間，確保深夜打卡都係 27 號
+        const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+        const r = String(rd).trim();
+        
+        const day = hkt.getDate();
+        const month = hkt.getMonth() + 1;
+        const year = hkt.getFullYear();
+
+        // 建立所有可能嘅香港今日格式 (27-2-2026, 27-02-2026 等)
+        const d0 = String(day).padStart(2, '0');
+        const m0 = String(month).padStart(2, '0');
+        
+        const formats = [
+            `${day}-${month}-${year}`,   // 27-2-2026
+            `${day}/${month}/${year}`,   // 27/2/2026
+            `${d0}-${m0}-${year}`,       // 27-02-2026 (你 Sheet 嗰隻)
+            `${d0}/${m0}/${year}`        // 27/02/2026
         ];
-        return combinations.some(fmt => r.includes(fmt));
+
+        // 用 === 完全比對，確保唔會認錯尋日
+        return formats.some(f => r === f);
     };
 
     // 改用 isToday 檢查
