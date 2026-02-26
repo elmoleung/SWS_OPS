@@ -1,20 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SWS/OPS 系統</title>
-  
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968313.png">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>SWS/OPS員工打卡系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 你提供的 Config
     const firebaseConfig = {
       apiKey: "AIzaSyDTT86mpGJJMByToRMi7b8jjI0LoNJarNo",
       authDomain: "sws-ops.firebaseapp.com",
@@ -28,120 +23,82 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- 全域變數 ---
-    let currentUser = null;
-
-    // --- 介面控制 ---
-    const showPage = (id) => {
-      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
-      window.scrollTo(0,0);
-    };
-
-    // --- 登入功能 ---
+    // 登入邏輯
     window.doLogin = async () => {
-      const name = document.getElementById('loginName').value.trim();
-      const pin = document.getElementById('loginPin').value.trim();
-      const btn = document.getElementById('loginBtn');
+      const name = document.getElementById('name').value.trim();
+      const pin = document.getElementById('pin').value.trim();
+      const btn = document.querySelector('button');
       
-      if(!name || !pin) return alert('請輸入姓名同 PIN');
+      if(!name || !pin) { alert('請填寫姓名及PIN'); return; }
       
       btn.disabled = true;
-      btn.innerText = '登入中...';
+      btn.innerText = '驗證中...';
 
       try {
         const q = query(collection(db, "employees"), where("name", "==", name), where("pin", "==", pin));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
-          currentUser = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
-          localStorage.setItem('sws_user', JSON.stringify(currentUser));
-          renderDashboard();
+          const userData = querySnapshot.docs[0].data();
+          localStorage.setItem('sws_user', JSON.stringify(userData));
+          alert('登入成功！');
+          // 登入成功後跳轉或顯示主頁 (呢度暫時同舊版一樣處理)
+          document.getElementById('loginDiv').classList.add('hidden');
+          document.getElementById('mainDiv').classList.remove('hidden');
+          document.getElementById('displayUserName').innerText = userData.name;
         } else {
-          alert('姓名或 PIN 錯誤');
+          alert('姓名或PIN不正確');
         }
       } catch (e) {
-        console.error(e);
-        alert('登入出錯，請檢查網路');
+        alert('連線失敗: ' + e.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = '登入';
+        btn.innerText = '登入系統';
       }
     };
 
-    // --- 主介面渲染 ---
-    window.renderDashboard = () => {
-      document.getElementById('userName').innerText = currentUser.name;
-      if(currentUser.role === 'admin') {
-        document.getElementById('adminBtn').classList.remove('hidden');
-      }
-      showPage('pageDashboard');
-    };
-
-    // --- 登出 ---
-    window.doLogout = () => {
-      localStorage.removeItem('sws_user');
-      location.reload();
-    };
-
-    // 啟動檢查
     window.onload = () => {
       const saved = localStorage.getItem('sws_user');
       if(saved) {
-        currentUser = JSON.parse(saved);
-        renderDashboard();
-      } else {
-        showPage('pageLogin');
+        const userData = JSON.parse(saved);
+        document.getElementById('loginDiv').classList.add('hidden');
+        document.getElementById('mainDiv').classList.remove('hidden');
+        document.getElementById('displayUserName').innerText = userData.name;
       }
     };
   </script>
 
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    .page { min-height: 100vh; background-color: #f3f4f6; }
-    .btn-primary { @apply w-full bg-blue-600 text-white py-4 rounded-xl font-bold active:scale-95 transition-all shadow-lg; }
+    body { background-color: #f0f2f5; margin: 0; font-family: sans-serif; }
+    .header { background: #1a73e8; color: white; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; }
+    .container { padding: 20px; max-width: 500px; margin: auto; }
+    .card { background: white; padding: 20px; border-radius: 8px; shadow-sm: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    button { width: 100%; background: #1a73e8; color: white; padding: 14px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+    button:disabled { background: #ccc; }
+    .user-info { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
   </style>
 </head>
-<body class="antialiased text-gray-900">
+<body>
 
-  <div id="pageLogin" class="page flex items-center justify-center px-6 hidden">
-    <div class="w-full max-w-md bg-white p-8 rounded-3xl shadow-2xl">
-      <h1 class="text-3xl font-black text-center mb-8 text-blue-600">SWS / OPS</h1>
-      <div class="space-y-4">
-        <input id="loginName" type="text" placeholder="員工姓名" class="w-full p-4 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none">
-        <input id="loginPin" type="password" inputmode="numeric" placeholder="6 位 PIN 碼" class="w-full p-4 border-2 border-gray-100 rounded-xl focus:border-blue-500 outline-none">
-        <button id="loginBtn" onclick="doLogin()" class="btn-primary text-lg">登入</button>
-      </div>
+  <div class="header">SWS/OPS員工打卡系統</div>
+
+  <div class="container">
+    <div id="loginDiv" class="card">
+      <h3 style="margin-top:0; text-align:center;">員工登入</h3>
+      <input type="text" id="name" placeholder="請輸入姓名">
+      <input type="password" id="pin" inputmode="numeric" placeholder="請輸入6位PIN碼">
+      <button onclick="doLogin()">登入系統</button>
     </div>
-  </div>
 
-  <div id="pageDashboard" class="page hidden">
-    <nav class="bg-white px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
-      <span class="font-bold text-xl text-blue-600">SWS 系統</span>
-      <button onclick="doLogout()" class="text-gray-400 text-sm">登出</button>
-    </nav>
-    
-    <div class="p-6 space-y-6">
-      <div class="bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-3xl text-white shadow-lg">
-        <p class="opacity-80">歡迎返嚟,</p>
-        <h2 id="userName" class="text-3xl font-bold">-</h2>
+    <div id="mainDiv" class="card hidden">
+      <div class="user-info">歡迎, <span id="displayUserName"></span></div>
+      <p style="color:#666; font-size:14px;">請選擇打卡動作：</p>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
+        <button style="background:#34a853;">返工打卡</button>
+        <button style="background:#ea4335;">放工打卡</button>
       </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <button class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center space-y-2 active:bg-gray-50">
-          <span class="text-3xl">📍</span>
-          <span class="font-bold text-gray-700">返工打卡</span>
-        </button>
-        <button class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center space-y-2 active:bg-gray-50">
-          <span class="text-3xl">🏠</span>
-          <span class="font-bold text-gray-700">放工打卡</span>
-        </button>
-      </div>
-
-      <button id="adminBtn" class="hidden w-full bg-amber-100 text-amber-700 py-4 rounded-2xl font-bold flex items-center justify-center space-x-2">
-        <span>⚙️</span>
-        <span>管理員介面 (手機專用)</span>
-      </button>
+      <button onclick="localStorage.clear(); location.reload();" style="background:#666; margin-top:20px; padding:8px; font-size:14px;">登出帳號</button>
     </div>
   </div>
 
