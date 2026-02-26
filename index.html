@@ -196,8 +196,20 @@ window.doLogin = async () => {
 
 function renderUI() {
     let h = "";
-    // 【新加】今日日期，用嚟對準尋日定今日
-    const todayStr = new Date().toLocaleDateString('zh-HK'); 
+    
+    // 【超級兼容工具】只要日-月-年對得上，無論係 / 定 - 定有無補0都認到
+    const isToday = (rd) => {
+        if (!rd) return false;
+        const d = new Date();
+        const day = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
+        const r = String(rd);
+        const combinations = [
+            `${day}-${month}-${year}`, `${day}/${month}/${year}`,
+            `${String(day).padStart(2,'0')}-${String(month).padStart(2,'0')}-${year}`,
+            `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`
+        ];
+        return combinations.some(fmt => r.includes(fmt));
+    };
 
     if(!cachedData.todaySchedules || cachedData.todaySchedules.length === 0) {
         h = "<p style='color:#999; padding:20px;'>今日暫無安排更次</p>";
@@ -209,9 +221,9 @@ function renderUI() {
             const detail = timeStr + " " + eventName;
             const uniqueKey = eventName + " [" + timeStr + "]";
             
-            // 【修正版】要認埋日期、地點、同 uniqueKey
-            const hasIn = cachedData.records.some(r => r[0] == todayStr && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
-            const hasOut = cachedData.records.some(r => r[0] == todayStr && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "收工");
+            // 【修正版】改用 isToday 工具去檢查 r[0]
+            const hasIn = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
+            const hasOut = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "收工");
             
             const bothDone = hasIn && hasOut;
             h += `<div class="menu-btn" style="${bothDone ? 'opacity:0.4; background:#e5e5e7; pointer-events:none;' : ''}" onclick="selectJob(${i})">
@@ -264,26 +276,40 @@ window.chooseYM = (ym) => {
 };
 
 window.selectJob = (i) => {
-   selectedSchedule = cachedData.todaySchedules[i];
-    document.getElementById("selectedJobTitle").innerText = selectedSchedule[3];
+    selectedSchedule = cachedData.todaySchedules[i];
+    const jobLoc = selectedSchedule[3];
     const timeStr = selectedSchedule[1] || "";
     const eventName = selectedSchedule[4] || "";
-    const jobLoc = selectedSchedule[3];
     const uniqueKey = eventName + " [" + timeStr + "]";
-    const todayStr = new Date().toLocaleDateString('zh-HK');
 
-    // 【修正版】入到去個掣都係要認返日期
-    const hasIn = cachedData.records.some(r => r[0] == todayStr && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
-    const hasOut = cachedData.records.some(r => r[0] == todayStr && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "收工");
+    // 【超級兼容工具】同 renderUI 嗰邊對齊，認得返 27-02-2026
+    const isToday = (rd) => {
+        if (!rd) return false;
+        const d = new Date();
+        const day = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
+        const r = String(rd);
+        const combinations = [
+            `${day}-${month}-${year}`, `${day}/${month}/${year}`,
+            `${String(day).padStart(2,'0')}-${String(month).padStart(2,'0')}-${year}`,
+            `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`
+        ];
+        return combinations.some(fmt => r.includes(fmt));
+    };
+
+    // 改用 isToday 檢查
+    const hasIn = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
+    const hasOut = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "收工");
     
+    document.getElementById("selectedJobTitle").innerText = jobLoc;
     const btnIn = document.getElementById("btnIn");
     const btnOut = document.getElementById("btnOut");
+    
     btnIn.disabled = hasIn; btnIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡";
     btnIn.style.opacity = hasIn ? "0.5" : "1";
     btnOut.disabled = hasOut; btnOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡";
     btnOut.style.opacity = hasOut ? "0.5" : "1";
     showBox('typeBox');
-}
+};
 
 window.triggerCamera = (t) => {
     clockType = t;
