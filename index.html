@@ -1,49 +1,129 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SWS/OPS員工打卡系統</title>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968313.png">
-<style>:root { --primary: #000; --bg: #f2f2f7; --success: #34c759; --blue: #007aff; }
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { margin:0; font-family:-apple-system, 'SF Pro Display', sans-serif; background: var(--bg); color: #1c1c1e; }
-.card {background:white; width:92%; max-width:400px; padding:25px;
-border-radius:28px; box-shadow:0 10px 30px rgba(0,0,0,0.08);
-text-align:center; margin: 20px auto; display: none;
-}.active { display: block !important; animation: fadeIn 0.2s ease-out; }
-@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-h2 { margin-bottom:20px; font-size:22px; font-weight:700; }
-button { width:100%; padding:18px; border-radius:16px; border:none; background:var(--primary); color:white; font-size:16px; font-weight:600; margin-top:10px; cursor:pointer; }
-button:active { opacity: 0.7; transform: scale(0.98); }
-button:disabled { background: #ccc !important; }
-.secondary { background:#e5e5e7; color:#000; }
-.home-link { color: var(--blue); cursor: pointer; display: block; margin-top: 15px; font-size: 15px; font-weight: 600; text-decoration: none; }
-#btnIn { background: #FFFBCC; color: #856404; border: 1px solid #ffeeba; }
-#btnOut { background: #CCE5FF; color: #004085; border: 1px solid #b8daff; }
-.menu-btn { text-align:left; padding:18px; background:#fff; margin-bottom:12px; border-radius:18px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
-.record-item { text-align:left; padding:15px; border-bottom:1px solid #f2f2f7; font-size:14px; position: relative; }
-input, textarea { width:100%; padding:18px; margin-bottom:15px; border-radius:16px; border:1.5px solid #d1d1d6; font-size:16px; outline:none; }
-.loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(3px); }
-</style>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SWS/OPS員工打卡系統</title>
+    <style>
+        :root { --primary: #000; --bg: #f2f2f7; --success: #34c759; --blue: #007aff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin:0; font-family:-apple-system, 'SF Pro Display', sans-serif; background: var(--bg); color: #1c1c1e; }
+        .card { background:white; width:92%; max-width:400px; padding:25px; border-radius:28px; box-shadow:0 10px 30px rgba(0,0,0,0.08); text-align:center; margin: 20px auto; display: none; }
+        .active { display: block !important; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        h2 { margin-bottom:20px; font-size:22px; font-weight:700; }
+        button { width:100%; padding:18px; border-radius:16px; border:none; background:var(--primary); color:white; font-size:16px; font-weight:600; margin-top:10px; cursor:pointer; }
+        button:active { opacity: 0.7; transform: scale(0.98); }
+        button:disabled { background: #ccc !important; }
+        .secondary { background:#e5e5e7; color:#000; }
+        .home-link { color: var(--blue); cursor: pointer; display: block; margin-top: 15px; font-size: 15px; font-weight: 600; text-decoration: none; }
+        #btnIn { background: #FFFBCC; color: #856404; border: 1px solid #ffeeba; }
+        #btnOut { background: #CCE5FF; color: #004085; border: 1px solid #b8daff; }
+        .menu-btn { text-align:left; padding:18px; background:#fff; margin-bottom:12px; border-radius:18px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+        .record-item { text-align:left; padding:15px; border-bottom:1px solid #f2f2f7; font-size:14px; position: relative; }
+        .tag { font-size:11px; padding:4px 10px; border-radius:8px; font-weight:800; display: inline-block; min-width: 50px; text-align: center; }
+        .tag-in { background: #FFFBCC; color: #856404; border: 0.5px solid #ffeeba; }
+        .tag-out { background: #CCE5FF; color: #004085; border: 0.5px solid #b8daff; }
+        input, textarea { width:100%; padding:18px; margin-bottom:15px; border-radius:16px; border:1.5px solid #d1d1d6; font-size:16px; outline:none; }
+        .loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(3px); }
+        .big-check { font-size: 70px; margin-bottom: 10px; }
+        .date-group { border: 1px solid #e5e5e7; border-radius: 12px; margin-bottom: 10px; overflow: hidden; background: #fff; }
+        .date-header { background: #f9f9fb; padding: 15px; text-align: left; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .date-content { display: none; padding: 0 15px; background: #fff; border-top: 1px solid #eee; }
+        .date-content.open { display: block; }
+    </style>
 </head>
 <body>
+
 <div id="loading" class="loading-overlay"><b>⌛ 處理中...</b></div>
 
 <div class="card active" id="loginBox">
-<div style="font-size: 50px; margin-bottom: 15px;">💼</div>
-<h2>SWS/OPS 打卡系統</h2>
-<input id="name" placeholder="登入名稱" autocomplete="off">
-<input id="pin" type="password" placeholder="PIN碼" inputmode="numeric">
-<button id="loginBtn">登入系統</button>
+    <div style="font-size: 50px; margin-bottom: 15px;">💼</div>
+    <h2>SWS/OPS 打卡系統</h2>
+    <input id="name" placeholder="登入名稱" autocomplete="off">
+    <input id="pin" type="password" placeholder="PIN碼" inputmode="numeric">
+    <button id="loginBtn" onclick="doLogin()">登入系統</button>
 </div>
 
 <div class="card" id="menuBox">
-<h2 id="userHello">你好</h2>
-<div class="menu-btn" onclick="showBox('clockInBox')"><div>📍 <b>我要打卡！</b></div><span>❯</span></div>
-<div class="menu-btn"><div>📅 <b>我想睇更！</b></div><span>❯</span></div>
-<div class="menu-btn"><div>📜 <b>打卡紀錄</b></div><span>❯</span></div>
-<button class="secondary" id="logoutBtn" style="margin-top:20px;">登出系統</button>
+    <h2 id="userHello">你好</h2>
+    <div class="menu-btn" onclick="showBox('clockInBox')"><div>📍 <b>我要打卡！</b></div><span>❯</span></div>
+    <div class="menu-btn" onclick="startSchedFlow()"><div>📅 <b>我想睇更！</b></div><span>❯</span></div>
+    <div class="menu-btn" onclick="startRecordFlow()"><div>📜 <b>打卡紀錄</b></div><span>❯</span></div>
+    <div class="menu-btn" onclick="showBox('supportBox')"><div>🛠️ <b>技術支援</b></div><span>❯</span></div>
+    <button class="secondary" onclick="location.reload()" style="margin-top:20px;">登出系統</button>
+</div>
+
+<div class="card" id="clockInBox">
+    <h2>今日更次</h2>
+    <div id="todaySchedules"></div>
+    <button class="secondary" onclick="showBox('menuBox')">返回</button>
+</div>
+
+<div class="card" id="typeBox">
+    <h2 id="selectedJobTitle">地點</h2>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleCapture(this)" style="display:none">
+    <button id="btnIn" onclick="triggerCamera('翻工')">🌅 翻工打卡</button>
+    <button id="btnOut" onclick="triggerCamera('收工')">🌇 收工打卡</button>
+    <button class="secondary" onclick="showBox('clockInBox')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+</div>
+
+<div class="card" id="successBox">
+    <div class="big-check">✅</div>
+    <h2 id="successType">打卡成功</h2>
+    <p id="successTime" style="font-size:20px; font-weight:bold; margin:10px 0;"></p>
+    <p id="successDetail" style="color:#666; font-size:14px;"></p>
+    <button onclick="showBox('menuBox')">返回主頁</button>
+</div>
+
+<div class="card" id="boxLoc">
+    <h2>選擇地點</h2>
+    <div id="listLoc"></div>
+    <button class="secondary" onclick="showBox('menuBox')">返回</button>
+</div>
+
+<div class="card" id="boxYM">
+    <h2 id="titleYM">選擇月份</h2>
+    <div id="listYM"></div>
+    <button class="secondary" onclick="showBox('boxLoc')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+</div>
+
+<div class="card" id="boxFinal">
+    <h2 id="titleFinal">更次詳情</h2>
+    <div id="listFinal" style="max-height:400px; overflow-y:auto;"></div>
+    <button class="secondary" onclick="showBox('boxYM')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+</div>
+
+<div class="card" id="recordLocBox">
+    <div style="font-size: 40px; margin-bottom: 10px;">🏢</div>
+    <h2>選擇紀錄地點</h2>
+    <div id="listRecordLoc"></div>
+    <button class="secondary" onclick="showBox('menuBox')">返回主頁</button>
+</div>
+
+<div class="card" id="recordMonthBox">
+    <h2 id="titleRecordYM">選擇月份</h2>
+    <div id="listRecordYM"></div>
+    <button class="secondary" onclick="showBox('recordLocBox')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+</div>
+
+<div class="card" id="recordFinalBox">
+    <h2 id="titleRecordFinal">打卡紀錄</h2>
+    <div id="listRecordFinal" style="max-height:450px; overflow-y:auto; padding:5px;"></div>
+    <button class="secondary" onclick="showBox('recordMonthBox')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+</div>
+
+<div class="card" id="supportBox">
+    <h2>技術支援</h2>
+    <p style="font-size: 14px; color: #ff3b30; font-weight: bold; margin-bottom: 15px;">⚠️ 有緊急事請自行聯絡Elmo</p>
+    <textarea id="supportMsg" rows="4" placeholder="請輸入留言..."></textarea>
+    <button id="supportBtn" onclick="submitSupport()">提交留言</button>
+    <button class="secondary" onclick="showBox('menuBox')">返回</button>
 </div>
 
 <script type="module">
@@ -51,63 +131,293 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDTT86mpGJJMByToRMi7b8jjI0LoNJarNo",
-  authDomain: "sws-ops.firebaseapp.com",
-  projectId: "sws-ops",
-  storageBucket: "sws-ops.firebasestorage.app",
-  messagingSenderId: "985280948590",
-  appId: "1:985280948590:web:3aad1539136659b4dc797f"
+    apiKey: "AIzaSyDTT86mpGJJMByToRMi7b8jjI0LoNJarNo",
+    authDomain: "sws-ops.firebaseapp.com",
+    projectId: "sws-ops",
+    storageBucket: "sws-ops.firebasestorage.app",
+    messagingSenderId: "985280948590",
+    appId: "1:985280948590:web:3aad1539136659b4dc797f"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 全域導航
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwc8jcyQVJAAphYSmwdKvqrk5MpOgJlI24FeCquapGq3-7ne7Gx4ok924vnUCcI2Tba/exec";
+let currentUser = "";
+let cachedData = null;
+let curL = "";
+let curRecordLoc = "";
+let selectedSchedule = null;
+let clockType = "";
+
+// 將所有 Function 綁定到 window 供 HTML onclick 使用
 window.showBox = (id) => {
-  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+    const cards = document.getElementsByClassName('card');
+    for(let i=0; i<cards.length; i++) cards[i].classList.remove('active');
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
 };
 
-// 登入邏輯
-document.getElementById('loginBtn').onclick = async () => {
-  const n = document.getElementById("name").value.trim();
-  const p = document.getElementById("pin").value.trim();
-  if(!n || !p) return;
-  
-  const btn = document.getElementById("loginBtn");
-  btn.innerText = "驗證中...";
-  btn.disabled = true;
+window.doLogin = async () => {
+    const n = document.getElementById("name").value.trim();
+    const p = document.getElementById("pin").value.trim();
+    if(!n || !p) return;
+    
+    const btn = document.getElementById("loginBtn");
+    const loading = document.getElementById("loading");
+    btn.innerText = "驗證中..."; btn.disabled = true;
+    loading.style.display = "flex";
 
-  try {
-    const q = query(collection(db, "employees"), where("name", "==", n), where("pin", "==", p));
-    const snap = await getDocs(q);
-    if(!snap.empty) {
-      const user = snap.docs[0].data();
-      localStorage.setItem('sws_user', JSON.stringify(user));
-      document.getElementById("userHello").innerText = "你好，" + user.name;
-      showBox('menuBox');
-    } else {
-      alert("姓名或PIN碼錯誤");
+    try {
+        // Firebase 驗證
+        const q = query(collection(db, "employees"), where("name", "==", n), where("pin", "==", p));
+        const snap = await getDocs(q);
+        
+        if(!snap.empty) {
+            // 驗證成功後，從 Google Sheet 獲取全份資料
+            const response = await fetch(`${WEB_APP_URL}?action=refresh&name=${encodeURIComponent(n)}`);
+            const resData = await response.json();
+            
+            currentUser = n;
+            cachedData = resData;
+            renderUI();
+            document.getElementById("userHello").innerText = "你好，" + currentUser;
+            window.showBox('menuBox');
+        } else {
+            alert("姓名或PIN碼錯誤 (Firebase)");
+            btn.innerText = "登入系統"; btn.disabled = false;
+        }
+    } catch(e) {
+        alert("連線失敗: " + e.message);
+        btn.innerText = "登入系統"; btn.disabled = false;
     }
-  } catch(e) {
-    alert("連線出錯");
-  } finally {
-    btn.innerText = "登入系統";
-    btn.disabled = false;
-  }
+    loading.style.display = "none";
 };
 
-document.getElementById('logoutBtn').onclick = () => {
-  localStorage.removeItem('sws_user');
-  location.reload();
+function renderUI() {
+    let h = "";
+    if(!cachedData.todaySchedules || cachedData.todaySchedules.length === 0) {
+        h = "<p style='color:#999; padding:20px;'>今日暫無安排更次</p>";
+    } else {
+        cachedData.todaySchedules.forEach((s, i) => {
+            const timeStr = s[1] || "";
+            const jobLoc = s[3] || "";
+            const eventName = s[4] || "";
+            const detail = timeStr + " " + eventName;
+            const uniqueKey = eventName + " [" + timeStr + "]";
+            const hasIn = cachedData.records.some(r => r[5] === uniqueKey && r[3] === "翻工");
+            const hasOut = cachedData.records.some(r => r[5] === uniqueKey && r[3] === "收工");
+            const bothDone = hasIn && hasOut;
+            h += `<div class="menu-btn" style="${bothDone ? 'opacity:0.4; background:#e5e5e7; pointer-events:none;' : ''}" onclick="selectJob(${i})">
+                <div><b>${jobLoc}</b><br><small>${detail}</small></div>
+                <span>${bothDone ? '✅ 已完更' : '❯'}</span>
+            </div>`;
+        });
+    }
+    document.getElementById("todaySchedules").innerHTML = h;
+}
+window.renderUI = renderUI;
+
+window.startSchedFlow = () => {
+    const locs = [...new Set(cachedData.allSchedules.map(s => s[3]))];
+    let h = "";
+    locs.forEach(l => h += `<div class="menu-btn" onclick="chooseLoc('${l}')"><b>${l}</b><span>❯</span></div>`);
+    document.getElementById("listLoc").innerHTML = h || "無資料";
+    window.showBox('boxLoc');
 };
 
-// 檢查自動登入
-const saved = localStorage.getItem('sws_user');
-if(saved) {
-  const user = JSON.parse(saved);
-  document.getElementById("userHello").innerText = "你好，" + user.name;
-  showBox('menuBox');
+window.chooseLoc = (l) => {
+    curL = l;
+    document.getElementById("titleYM").innerText = l;
+    const ymSet = [...new Set(cachedData.allSchedules.filter(s => s[3] === curL).map(s => {
+        const p = parseDateStr(s[0]);
+        return p[0] + "年" + p[1] + "月";
+    }))].sort().reverse();
+    let h = "";
+    ymSet.forEach(ym => h += `<div class="menu-btn" onclick="chooseYM('${ym}')"><b>${ym}</b><span>❯</span></div>`);
+    document.getElementById("listYM").innerHTML = h;
+    window.showBox('boxYM');
+};
+
+window.chooseYM = (ym) => {
+    const yNum = ym.split("年")[0];
+    const mNum = ym.split("年")[1].replace("月","");
+    document.getElementById("titleFinal").innerText = curL + " (" + ym + ")";
+    const list = cachedData.allSchedules.filter(s => {
+        const p = parseDateStr(s[0]);
+        return s[3] === curL && p[0] === yNum && p[1] === mNum;
+    }).sort((a,b) => parseInt(parseDateStr(b[0])[2]) - parseInt(parseDateStr(a[0])[2]));
+    let h = "";
+    list.forEach(s => {
+        const p = parseDateStr(s[0]);
+        const dstr = ("0"+p[2]).slice(-2) + "/" + ("0"+p[1]).slice(-2);
+        h += `<div class="record-item"><b>${dstr}</b><br><small>${s[1]} ${s[4]}</small></div>`;
+    });
+    document.getElementById("listFinal").innerHTML = h;
+    window.showBox('boxFinal');
+};
+
+window.selectJob = (i) => {
+    selectedSchedule = cachedData.todaySchedules[i];
+    document.getElementById("selectedJobTitle").innerText = selectedSchedule[3];
+    const timeStr = selectedSchedule[1] || "";
+    const eventName = selectedSchedule[4] || "";
+    const uniqueKey = eventName + " [" + timeStr + "]";
+    const hasIn = cachedData.records.some(r => r[5] === uniqueKey && r[3] === "翻工");
+    const hasOut = cachedData.records.some(r => r[5] === uniqueKey && r[3] === "收工");
+    const btnIn = document.getElementById("btnIn");
+    const btnOut = document.getElementById("btnOut");
+    btnIn.disabled = hasIn; btnIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡";
+    btnIn.style.opacity = hasIn ? "0.5" : "1";
+    btnOut.disabled = hasOut; btnOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡";
+    btnOut.style.opacity = hasOut ? "0.5" : "1";
+    window.showBox('typeBox');
+};
+
+window.triggerCamera = (t) => {
+    clockType = t;
+    const btn = t === '翻工' ? document.getElementById("btnIn") : document.getElementById("btnOut");
+    const originalText = btn.innerText;
+    btn.innerText = "📸 啟動相機中...";
+    document.getElementById("cameraInput").click();
+    setTimeout(() => { btn.innerText = originalText; }, 3000);
+};
+
+window.handleCapture = (input) => {
+    if (!input.files[0]) return;
+    const loading = document.getElementById("loading");
+    loading.innerHTML = "<b>🔒 正在加密並上傳資料...</b>";
+    loading.style.display = "flex";
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const maxW = 500;
+            canvas.width = maxW;
+            canvas.height = img.height * (maxW / img.width);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.4);
+            const detail = selectedSchedule[4] + " [" + selectedSchedule[1] + "]";
+            
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "save", name: currentUser, location: selectedSchedule[3], type: clockType, detail: detail, image: dataUrl })
+            }).then(r => r.json()).then(res => {
+                document.getElementById("successType").innerText = clockType + "成功";
+                document.getElementById("successTime").innerText = res.time;
+                document.getElementById("successDetail").innerHTML = `<b style="color:var(--primary); font-size:18px;">${selectedSchedule[3]}</b><br>${selectedSchedule[4]}`;
+                window.showBox('successBox');
+                loading.style.display = "none";
+                
+                // 刷新本地標記
+                const timeStr = selectedSchedule[1] || "";
+                const eventName = selectedSchedule[4] || "";
+                const uniqueKey = eventName + " [" + timeStr + "]";
+                cachedData.records.push([res.time.split(' ')[0], currentUser, selectedSchedule[3], clockType, res.time, uniqueKey]);
+                renderUI();
+            });
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(input.files[0]);
+};
+
+window.startRecordFlow = () => {
+    if(!cachedData || !cachedData.records || cachedData.records.length === 0) {
+        alert("暫無打卡紀錄"); return;
+    }
+    const locs = [...new Set(cachedData.records.map(r => r[2]))];
+    let h = "";
+    locs.forEach(l => h += `<div class="menu-btn" onclick="chooseRecordLoc('${l}')"><b>${l}</b><span>❯</span></div>`);
+    document.getElementById("listRecordLoc").innerHTML = h;
+    window.showBox('recordLocBox');
+};
+
+window.chooseRecordLoc = (l) => {
+    curRecordLoc = l;
+    document.getElementById("titleRecordYM").innerText = l;
+    const myRecords = cachedData.records.filter(r => r[2] === l);
+    const ymSet = [...new Set(myRecords.map(r => {
+        const p = parseDateStr(r[0]); return p[0] + "年" + p[1] + "月";
+    }))].sort().reverse();
+    let h = "";
+    ymSet.forEach(ym => h += `<div class="menu-btn" onclick="chooseRecordYM('${ym}')"><b>${ym}</b><span>❯</span></div>`);
+    document.getElementById("listRecordYM").innerHTML = h;
+    window.showBox('recordMonthBox');
+};
+
+window.chooseRecordYM = (ym) => {
+    const yNum = ym.split("年")[0];
+    const mNum = ym.split("年")[1].replace("月","");
+    document.getElementById("titleRecordFinal").innerText = curRecordLoc + " (" + ym + ")";
+    const myRecords = cachedData.records.filter(r => {
+        const p = parseDateStr(r[0]);
+        return r[2] === curRecordLoc && p[0] === yNum && p[1] === mNum;
+    });
+    const dailyGroup = {};
+    myRecords.forEach(r => {
+        const dStr = r[0];
+        if(!dailyGroup[dStr]) dailyGroup[dStr] = [];
+        dailyGroup[dStr].push(r);
+    });
+    const sortedDates = Object.keys(dailyGroup).sort((a,b) => {
+        const pA = parseDateStr(a); const pB = parseDateStr(b);
+        return new Date(pB[0], pB[1]-1, pB[2]) - new Date(pA[0], pA[1]-1, pA[2]);
+    });
+    let h = "";
+    sortedDates.forEach(dateStr => {
+        const logs = dailyGroup[dateStr];
+        h += `<div class="date-group">
+            <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                <span>📅 ${dateStr}</span><span style="font-size:12px; color:#999;">展開 ▼</span>
+            </div>
+            <div class="date-content">
+                ${logs.map(log => {
+                    const isOut = log[3] === "收工";
+                    const realTime = log[4].split(' ')[1] || log[4];
+                    return `<div style="text-align:left; padding:12px 0; border-bottom:1px solid #f2f2f7;">
+                        <div style="display:flex; align-items:center; margin-bottom:4px;">
+                            <span class="tag ${isOut ? 'tag-out' : 'tag-in'}">${log[3]}</span>
+                            <span style="font-weight:700; font-size:15px; margin-left:8px;">${realTime}</span>
+                        </div>
+                        <div style="padding-left:58px;"><small style="color:#8e8e93; font-size:12px;">${log[5]}</small></div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    });
+    document.getElementById("listRecordFinal").innerHTML = h || "無資料";
+    window.showBox('recordFinalBox');
+};
+
+window.submitSupport = () => {
+    var msgElement = document.getElementById("supportMsg");
+    var msg = msgElement.value.trim();
+    if (!msg) return alert("請輸入留言內容");
+    document.getElementById("loading").style.display = "flex";
+    
+    fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "support", name: currentUser, message: msg })
+    }).then(() => {
+        document.getElementById("loading").style.display = "none";
+        alert("收到你！");
+        msgElement.value = "";
+        window.showBox('menuBox');
+    });
+};
+
+function parseDateStr(s) {
+    if (!s) return ["未知", "未知", "未知"];
+    let str = s instanceof Date ? s.toLocaleDateString('zh-HK') : s.toString();
+    let cleanStr = str.replace(/[/\sT]/g, "-");
+    let parts = cleanStr.split("-");
+    if (parts[0].length === 4) return [parts[0], parseInt(parts[1]).toString(), parseInt(parts[2]).toString()];
+    if (parts[2] && parts[2].length === 4) return [parts[2], parseInt(parts[1]).toString(), parseInt(parts[0]).toString()];
+    return ["未知", "未知", "未知"];
 }
 </script>
-</body></html>
+</body>
+</html>
