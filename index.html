@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SWS/OPS 打卡系統</title>
+  <style>
+    :root { --primary: #000; --bg: #f2f2f7; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin:0; font-family:-apple-system, sans-serif; background: var(--bg); color: #1c1c1e; }
+    .card { background:white; width:92%; max-width:400px; padding:25px; border-radius:28px; box-shadow:0 10px 30px rgba(0,0,0,0.08); text-align:center; margin: 20px auto; display: none; }
+    .active { display: block !important; animation: fadeIn 0.2s; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    h2 { margin-bottom:20px; font-size:22px; font-weight:700; }
+    button { width:100%; padding:18px; border-radius:16px; border:none; background:var(--primary); color:white; font-size:16px; font-weight:600; margin-top:10px; cursor:pointer; }
+    button:active { opacity: 0.7; transform: scale(0.98); }
+    button:disabled { background: #ccc !important; }
+    input { width:100%; padding:18px; margin-bottom:15px; border-radius:16px; border:1.5px solid #d1d1d6; font-size:16px; outline:none; }
+    .menu-btn { text-align:left; padding:18px; background:#fff; margin-bottom:12px; border-radius:18px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+    .loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(3px); }
+  </style>
+</head>
+<body>
+<div id="loading" class="loading-overlay"><b>⌛ 處理中...</b></div>
+
+<div class="card active" id="loginBox">
+  <div style="font-size: 50px; margin-bottom: 15px;">💼</div>
+  <h2>SWS/OPS 打卡登入</h2>
+  <input id="name" placeholder="登入名稱" autocomplete="off">
+  <input id="pin" type="password" placeholder="PIN碼" inputmode="numeric">
+  <button id="loginBtn" onclick="doLogin()">登入系統</button>
+</div>
+
+<div class="card" id="menuBox">
+  <h2 id="userHello">你好</h2>
+  <div class="menu-btn" onclick="showBox('clockInBox')"><div>📍 <b>我要打卡！</b></div><span>❯</span></div>
+  <button style="background:#e5e5e7; color:#000;" onclick="location.reload()">登出系統</button>
+</div>
+
+<div class="card" id="clockInBox">
+  <h2>今日更次</h2>
+  <div id="todaySchedules"></div>
+  <button style="background:#e5e5e7; color:#000;" onclick="showBox('menuBox')">返回</button>
+</div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxpHb7VVjoPWEun0HMR8HG9BMSu35Ga2KWcXLK4mGzTyPa-vqF2BnRvpTLChgJji1cFxA/exec"; 
+let currentUser = "";
+let cachedData = null;
+
+async function doLogin() {
+  const n = document.getElementById("name").value.trim();
+  const p = document.getElementById("pin").value.trim();
+  if(!n || !p) return;
+  document.getElementById("loading").style.display = "flex";
+  try {
+    const resp = await fetch(`${WEB_APP_URL}?action=login&name=${encodeURIComponent(n)}&pin=${encodeURIComponent(p)}`);
+    const res = await resp.json();
+    if(res.status === "SUCCESS") {
+      currentUser = n;
+      cachedData = res.data;
+      document.getElementById("userHello").innerText = "你好，" + n;
+      renderToday();
+      showBox('menuBox');
+    } else { alert("PIN碼或名稱錯誤"); }
+  } catch (e) { alert("連線超時，請檢查網絡"); }
+  document.getElementById("loading").style.display = "none";
+}
+
+function renderToday() {
+  let h = "";
+  if(!cachedData.todaySchedules || cachedData.todaySchedules.length === 0) {
+    h = "<p style='color:#999; padding:20px;'>今日暫無安排</p>";
+  } else {
+    cachedData.todaySchedules.forEach((s, i) => {
+      h += `<div class="menu-btn"><div><b>${s[3]}</b><br><small>${s[1]}</small></div><span>❯</span></div>`;
+    });
+  }
+  document.getElementById("todaySchedules").innerHTML = h;
+}
+
+function showBox(id) {
+  const cards = document.getElementsByClassName('card');
+  for(let i=0; i<cards.length; i++) cards[i].classList.remove('active');
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
