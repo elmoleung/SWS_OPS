@@ -196,6 +196,9 @@ window.doLogin = async () => {
 
 function renderUI() {
     let h = "";
+    // 【新加】今日日期，用嚟對準尋日定今日
+    const todayStr = new Date().toLocaleDateString('zh-HK'); 
+
     if(!cachedData.todaySchedules || cachedData.todaySchedules.length === 0) {
         h = "<p style='color:#999; padding:20px;'>今日暫無安排更次</p>";
     } else {
@@ -205,8 +208,11 @@ function renderUI() {
             const eventName = s[4] || "";
             const detail = timeStr + " " + eventName;
             const uniqueKey = eventName + " [" + timeStr + "]";
-            const hasIn = cachedData.records.some(r => r[5] === uniqueKey && r[3] === "翻工");
-            const hasOut = cachedData.records.some(r => r[5] === uniqueKey && r[3] === "收工");
+            
+            // 【修正版】要認埋日期、地點、同 uniqueKey
+            const hasIn = cachedData.records.some(r => r[0] == todayStr && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
+            const hasOut = cachedData.records.some(r => r[0] == todayStr && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "收工");
+            
             const bothDone = hasIn && hasOut;
             h += `<div class="menu-btn" style="${bothDone ? 'opacity:0.4; background:#e5e5e7; pointer-events:none;' : ''}" onclick="selectJob(${i})">
                 <div><b>${jobLoc}</b><br><small>${detail}</small></div>
@@ -258,21 +264,26 @@ window.chooseYM = (ym) => {
 };
 
 window.selectJob = (i) => {
-    selectedSchedule = cachedData.todaySchedules[i];
+   selectedSchedule = cachedData.todaySchedules[i];
     document.getElementById("selectedJobTitle").innerText = selectedSchedule[3];
     const timeStr = selectedSchedule[1] || "";
     const eventName = selectedSchedule[4] || "";
+    const jobLoc = selectedSchedule[3];
     const uniqueKey = eventName + " [" + timeStr + "]";
-    const hasIn = cachedData.records.some(r => r[5] === uniqueKey && r[3] === "翻工");
-    const hasOut = cachedData.records.some(r => r[5] === uniqueKey && r[3] === "收工");
+    const todayStr = new Date().toLocaleDateString('zh-HK');
+
+    // 【修正版】入到去個掣都係要認返日期
+    const hasIn = cachedData.records.some(r => r[0] == todayStr && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
+    const hasOut = cachedData.records.some(r => r[0] == todayStr && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "收工");
+    
     const btnIn = document.getElementById("btnIn");
     const btnOut = document.getElementById("btnOut");
     btnIn.disabled = hasIn; btnIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡";
     btnIn.style.opacity = hasIn ? "0.5" : "1";
     btnOut.disabled = hasOut; btnOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡";
     btnOut.style.opacity = hasOut ? "0.5" : "1";
-    window.showBox('typeBox');
-};
+    showBox('typeBox');
+}
 
 window.triggerCamera = (t) => {
     clockType = t;
