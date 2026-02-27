@@ -247,14 +247,32 @@ function renderUI() {
     }
     document.getElementById("todaySchedules").innerHTML = h;
 }
-window.renderUI = renderUI;
-
-window.startSchedFlow = () => {
-    const locs = [...new Set(cachedData.allSchedules.map(s => s[3]))];
+window.renderUI = () => {
     let h = "";
-    locs.forEach(l => h += `<div class="menu-btn" onclick="chooseLoc('${l}')"><b>${l}</b><span>❯</span></div>`);
-    document.getElementById("listLoc").innerHTML = h || "無資料";
-    window.showBox('boxLoc');
+    const getHKToday = () => {
+        const d = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+        const d0 = String(d.getDate()).padStart(2, '0'), m0 = String(d.getMonth() + 1).padStart(2, '0'), y = d.getFullYear();
+        return [`${d.getDate()}-${d.getMonth()+1}-${y}`, `${d0}-${m0}-${y}`, `${d.getDate()}/${d.getMonth()+1}/${y}`, `${d0}/${m0}/${y}`];
+    };
+    const hkTodayFormats = getHKToday();
+    const hasAnyOut = cachedData.records.some(r => hkTodayFormats.some(f => String(r[0]).trim() === f) && r[3] === "收工");
+
+    if(!cachedData.todaySchedules || cachedData.todaySchedules.length === 0) {
+        h = "<p style='color:#999; padding:20px;'>今日暫無安排更次</p>";
+    } else {
+        cachedData.todaySchedules.forEach((s, i) => {
+            const isLast = (i === cachedData.todaySchedules.length - 1);
+            let statusText = isLast ? "🌇 收工點" : "❯";
+            if (i === 0) statusText = "🌅 翻工點";
+            if (hasAnyOut) statusText = "✅ 已完更";
+
+            h += `<div class="menu-btn" style="${hasAnyOut ? 'opacity:0.4; background:#e5e5e7; pointer-events:none;' : ''}" onclick="selectJob(${i})">
+                <div><b>${s[3]}</b><br><small>${s[1]} ${s[4]}</small></div>
+                <span>${statusText}</span>
+            </div>`;
+        });
+    }
+    document.getElementById("todaySchedules").innerHTML = h;
 };
 
 window.chooseLoc = (l) => {
@@ -290,36 +308,52 @@ window.chooseYM = (ym) => {
 
 window.selectJob = (i) => {
     selectedSchedule = cachedData.todaySchedules[i];
+    const isLastShift = (i === cachedData.todaySchedules.length - 1); // 檢查係咪今日最後一更
+    
     const jobLoc = selectedSchedule[3];
     const timeStr = selectedSchedule[1] || "";
     const eventName = selectedSchedule[4] || "";
     const uniqueKey = eventName + " [" + timeStr + "]";
 
-    const isToday = (rd) => {
-        if (!rd) return false;
-        
-        // 【修正】強制轉做香港時間，確保深夜打卡都係 27 號
-        const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
-        const r = String(rd).trim();
-        
-        const day = hkt.getDate();
-        const month = hkt.getMonth() + 1;
-        const year = hkt.getFullYear();
-
-        // 建立所有可能嘅香港今日格式 (27-2-2026, 27-02-2026 等)
-        const d0 = String(day).padStart(2, '0');
-        const m0 = String(month).padStart(2, '0');
-        
-        const formats = [
-            `${day}-${month}-${year}`,   // 27-2-2026
-            `${day}/${month}/${year}`,   // 27/2/2026
-            `${d0}-${m0}-${year}`,       // 27-02-2026 (你 Sheet 嗰隻)
-            `${d0}/${m0}/${year}`        // 27/02/2026
-        ];
-
-        // 用 === 完全比對，確保唔會認錯尋日
-        return formats.some(f => r === f);
+    // 檢查 Policy 狀態
+    const getHKToday = () => {
+        const d = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+        const d0 = String(d.getDate()).padStart(2, '0'), m0 = String(d.getMonth() + 1).padStart(2, '0'), y = d.getFullYear();
+        return [`${d.getDate()}-${d.getMonth()+1}-${y}`, `${d0}-${m0}-${y}`, `${d.getDate()}/${d.getMonth()+1}/${y}`, `${d0}/${m0}/${y}`];
     };
+
+    const hkTodayFormats = getHKToday();
+    const todayRecs = cachedData.records.filter(r => hkTodayFormats.some(f => String(r[0]).trim() === f));
+    const lastAction = todayRecs.length > 0 ? todayRecs[todayRecs.length - 1][3] : null;
+
+    document.getElementById("selectedJobTitle").innerText = jobLoc;
+    const btnIn = document.getElementById("btnIn");
+    const btnOut = document.getElementById("btnOut");
+
+    // --- 翻工掣邏輯 ---
+    // 只要今日打咗任何一更翻工，全線鎖死「翻工」掣
+    const alreadyIn = (lastAction === "翻工" || lastAction === "收工"); 
+    // 修正：如果已經收咗工，翻工掣都唔應該再開返
+    btnIn.disabled = (lastAction === "翻工" || lastAction === "收工");
+    btnIn.innerText = (lastAction === "翻工" || lastAction === "收工") ? "✅ 已完成翻工" : "🌅 翻工打卡";
+    btnIn.style.opacity = btnIn.disabled ? "0.5" : "1";
+
+    // --- 收工掣邏輯 (關鍵改動) ---
+    if (!isLastShift) {
+        // 如果唔係最後一更，收工掣直接廢咗佢，費事員工亂撳
+        btnOut.disabled = true;
+        btnOut.innerText = "⛔ 請到最後一更收工";
+        btnOut.style.opacity = "0.3";
+    } else {
+        // 如果係最後一更：必須今日有翻工紀錄，且最後一個動作唔係收工，先准撳
+        const canOut = (lastAction === "翻工");
+        btnOut.disabled = !canOut;
+        btnOut.innerText = (lastAction === "收工") ? "✅ 今日已完更" : (canOut ? "🌇 全日收工打卡" : "⏳ 需先打翻工");
+        btnOut.style.opacity = canOut ? "1" : "0.5";
+    }
+
+    showBox('typeBox');
+};
 
     // 改用 isToday 檢查
     const hasIn = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
