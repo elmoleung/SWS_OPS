@@ -153,17 +153,27 @@ let curRecordLoc = "";
 let selectedSchedule = null;
 let clockType = "";
 
-// 核心 Helper: 統一解析日期
+// 核心 Helper: 強制解析日期，避免 01-03 變成 1月3號
 function parseDateStr(s) {
     if (!s) return ["未知", "未知", "未知"];
-    let str = String(s);
-    let cleanStr = str.replace(/[/\sT]/g, "-");
+    let str = String(s).trim();
+    
+    // 統一分隔符，將所有 / 換成 -
+    let cleanStr = str.replace(/\//g, "-");
     let parts = cleanStr.split("-");
-    if (parts[0].length === 4) return [parts[0], parseInt(parts[1]).toString(), parseInt(parts[2]).toString()];
-    if (parts[2] && parts[2].length === 4) return [parts[2], parseInt(parts[1]).toString(), parseInt(parts[0]).toString()];
+
+    // 情況 A: DD-MM-YYYY (例如 01-03-2026) -> 長度係 3 且最後一格係年份
+    if (parts.length === 3 && parts[2].length === 4) {
+        return [parts[2], parseInt(parts[1]).toString(), parseInt(parts[0]).toString()];
+    }
+    
+    // 情況 B: YYYY-MM-DD (例如 2026-03-01) -> 第一格係年份
+    if (parts.length === 3 && parts[0].length === 4) {
+        return [parts[0], parseInt(parts[1]).toString(), parseInt(parts[2]).toString()];
+    }
+
     return ["未知", "未知", "未知"];
 }
-
 // 核心 Helper: 取得香港今日日期格式
 const getHKTodayFormats = () => {
     const d = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
@@ -272,11 +282,18 @@ window.renderUI = () => {
     ];
 
     dateGroups.forEach(group => {
-        // 核心改動：filter 同時檢查「有0」同「無0」兩個版本，確保你 Sheet 點打都對到
-        const dayScheds = (cachedData.allSchedules || []).filter(s => {
-            const sDate = String(s[0]).trim();
-            return sDate === group.info.version1 || sDate === group.info.version2;
-        });
+        // 核心改動：用更嚴謹嘅方式比對日期
+const dayScheds = (cachedData.allSchedules || []).filter(s => {
+    const sDateParts = parseDateStr(s[0]);
+    // 將 Sheet 傳嚟嘅日期轉做 YYYY-MM-DD 格式
+    const sDateFormatted = `${sDateParts[0]}-${sDateParts[1].padStart(2,'0')}-${sDateParts[2].padStart(2,'0')}`;
+    
+    // 比對今日/昨日/翌日嘅格式 (同樣轉做 YYYY-MM-DD)
+    const gParts = group.info.version1.split('-'); // 假設 version1 係 DD-MM-YYYY
+    const gDateFormatted = `${gParts[2]}-${gParts[1]}-${gParts[0]}`;
+    
+    return sDateFormatted === gDateFormatted;
+});
         
         h += `<div class="date-group">
             <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
@@ -310,9 +327,16 @@ window.renderUI = () => {
 window.selectJobFromList = (s) => {
     selectedSchedule = s;
     const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
-    const hasIn = (cachedData.records || []).some(r => String(r[0]).trim() === String(s[0]).trim() && r[5] === uKey && r[3] === "翻工");
-    const hasOut = (cachedData.records || []).some(r => String(r[0]).trim() === String(s[0]).trim() && r[5] === uKey && r[3] === "收工");
-    
+    // 統一將兩邊日期都經 parseDateStr 轉成 YYYY-MM-DD 再比對
+    const hasIn = (cachedData.records || []).some(r => {
+    const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
+    return `${rp[0]}-${rp[1]}-${rp[2]}` === `${sp[0]}-${sp[1]}-${sp[2]}` && r[5] === uKey && r[3] === "翻工";
+});
+
+const hasOut = (cachedData.records || []).some(r => {
+    const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
+    return `${rp[0]}-${rp[1]}-${rp[2]}` === `${sp[0]}-${sp[1]}-${sp[2]}` && r[5] === uKey && r[3] === "收工";
+});
     document.getElementById("selectedJobTitle").innerText = s[3];
     const bIn = document.getElementById("btnIn");
     const bOut = document.getElementById("btnOut");
