@@ -211,23 +211,35 @@ window.doLogin = async () => {
 window.renderUI = () => {
     let h = "";
     const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
-    const formatDate = (d) => {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        return `${day}-${month}-${d.getFullYear()}`;
+    
+    // 1. 定義星期幾嘅名
+    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+    // 2. 修改格式化邏輯：拎走 padStart，加入星期
+    const formatDateInfo = (d) => {
+        const day = d.getDate(); // 唔使補零
+        const month = d.getMonth() + 1; // 唔使補零
+        const year = d.getFullYear();
+        const dayName = dayNames[d.getDay()];
+        return {
+            pure: `${day}-${month}-${year}`, // 用嚟同資料庫對比
+            full: `${day}-${month}-${year} (${dayName})` // 用嚟顯示俾人睇
+        };
     };
 
     const dateGroups = [
-        { label: "昨日", date: formatDate(new Date(new Date(hkt).setDate(hkt.getDate() - 1))) },
-        { label: "今日", date: formatDate(hkt) },
-        { label: "翌日", date: formatDate(new Date(new Date(hkt).setDate(hkt.getDate() + 1))) }
+        { label: "昨日", info: formatDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() - 1))) },
+        { label: "今日", info: formatDateInfo(hkt) },
+        { label: "翌日", info: formatDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() + 1))) }
     ];
 
     dateGroups.forEach(group => {
-        const dayScheds = (cachedData.allSchedules || []).filter(s => String(s[0]).trim() === group.date);
+        // 使用 .info.pure 同試算表日期對比
+        const dayScheds = (cachedData.allSchedules || []).filter(s => String(s[0]).trim() === group.info.pure);
+        
         h += `<div class="date-group">
             <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>📅 <b>${group.label}</b> (${group.date})</span><span>▼</span>
+                <span>📅 <b>${group.label}</b> (${group.info.full})</span><span>▼</span>
             </div>
             <div class="date-content ${group.label === '今日' ? 'open' : ''}">`;
         
