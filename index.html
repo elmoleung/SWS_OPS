@@ -486,45 +486,76 @@ window.chooseRecordLoc = (l) => {
 };
 
 window.chooseRecordYM = (ym) => {
+    // 1. 搵返個內容容器，做開合效果
+    const contentEl = document.getElementById(`content-${ym}`);
+    if (!contentEl) return;
+    
+    // 如果已經開咗，就閂返埋佢
+    if (contentEl.style.display === 'block') {
+        contentEl.style.display = 'none';
+        return;
+    }
+    
+    // 否則，開始生成內容並打開
     const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
+    // 2. 篩選紀錄並按日期排序 (最新在頂，1號在底)
     const logs = (cachedData.records || []).filter(r => {
         const p = parseDateStr(r[0]); 
-        return r[2] === curRecordLoc && p[0] === y && p[1] === m;
+        return r[2] === window.curRecordLoc && p[0] === y && p[1] === String(m);
     });
 
-    // 排序：將紀錄由新到舊排 (由 31號排返去 1號)
     logs.sort((a, b) => {
         const pa = parseDateStr(a[0]), pb = parseDateStr(b[0]);
         return parseInt(pb[2]) - parseInt(pa[2]);
     });
 
-    let h = logs.map(log => {
-        // 1. 解析日期
-        const p = parseDateStr(log[0]); // [年, 月, 日]
+    let h = "";
+    let lastDate = "";
+
+    logs.forEach(log => {
+        const p = parseDateStr(log[0]);
         const d = new Date(p[0], p[1]-1, p[2]);
         const dayName = dayNames[d.getDay()];
+        const displayDate = `${String(p[2]).padStart(2, '0')}-${String(p[1]).padStart(2, '0')}-${p[0]}`;
+        const dateHeader = `📅 ${displayDate} (${dayName})`;
 
-        // 2. 補零處理 (例如 2 -> 02)
-        const dd = String(p[2]).padStart(2, '0');
-        const mm = String(p[1]).padStart(2, '0');
-        
-        // 3. 砌出顯示格式: 28-02-2026 (SAT)
-        const dateWithDay = `${dd}-${mm}-${p[0]} (${dayName})`;
+        // 插入日期大標題 (每一日只出一次)
+        if (displayDate !== lastDate) {
+            h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid var(--blue); margin-top:15px;">${dateHeader}</div>`;
+            lastDate = displayDate;
+        }
 
-        return `<div class="record-item">
-            <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
-            <b>${dateWithDay}</b> ${log[4]} 
-            <div style="font-size:0.85em; color:#666; margin-top:4px; margin-left:55px;">
-                ${log[1]} | ${log[5]}
+        // 3. 跨 Sheet 對位：搵返 Schedules 嘅原定時間
+        // 對位 Key：Event [姓名]
+        const sched = (cachedData.allSchedules || []).find(s => {
+            const sp = parseDateStr(s[0]);
+            const uKey = (s[4] || "") + " [" + (s[1] || "") + "]"; 
+            return sp[0] === p[0] && sp[1] === p[1] && sp[2] === p[2] && uKey === log[5];
+        });
+
+        const schedTime = sched ? sched[1] : "更表時間未提供";
+
+        // 4. 三層排版內容
+        h += `<div class="record-item" style="padding:12px 15px; border-bottom:1px solid #eee; background:#fff;">
+            <div style="margin-bottom:6px;">
+                <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
+                <b style="font-size:1.05em; color:#222;">${displayDate} ${schedTime}</b>
+            </div>
+            
+            <div style="color:var(--blue); font-size:0.95em; margin-bottom:4px; font-weight:500;">
+                打卡時間✅ ${log[1]}
+            </div>
+            
+            <div style="color:#666; font-size:0.9em; padding-left:2px;">
+                ${log[4]}
             </div>
         </div>`;
-    }).join('');
+    });
 
-    document.getElementById("listRecordFinal").innerHTML = h || "無紀錄";
-    document.getElementById("titleRecordFinal").innerText = ym + " - 紀錄"; // 加返個標題
-    window.showBox('recordFinalBox');
+    contentEl.innerHTML = h || "<p style='padding:20px; text-align:center; color:#999;'>無紀錄</p>";
+    contentEl.style.display = 'block'; // 顯示內容
 };
 
 window.submitSupport = () => {
