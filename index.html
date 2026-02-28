@@ -486,21 +486,18 @@ window.chooseRecordLoc = (l) => {
 };
 
 window.chooseRecordYM = (ym) => {
-    // 1. 搵返個內容容器，做開合效果
     const contentEl = document.getElementById(`content-${ym}`);
     if (!contentEl) return;
     
-    // 如果已經開咗，就閂返埋佢
+    // 開合效果
     if (contentEl.style.display === 'block') {
         contentEl.style.display = 'none';
         return;
     }
     
-    // 否則，開始生成內容並打開
     const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-    // 2. 篩選紀錄並按日期排序 (最新在頂，1號在底)
     const logs = (cachedData.records || []).filter(r => {
         const p = parseDateStr(r[0]); 
         return r[2] === window.curRecordLoc && p[0] === y && p[1] === String(m);
@@ -521,23 +518,21 @@ window.chooseRecordYM = (ym) => {
         const displayDate = `${String(p[2]).padStart(2, '0')}-${String(p[1]).padStart(2, '0')}-${p[0]}`;
         const dateHeader = `📅 ${displayDate} (${dayName})`;
 
-        // 插入日期大標題 (每一日只出一次)
         if (displayDate !== lastDate) {
             h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid var(--blue); margin-top:15px;">${dateHeader}</div>`;
             lastDate = displayDate;
         }
 
-        // 3. 跨 Sheet 對位：搵返 Schedules 嘅原定時間
-        // 對位 Key：Event [姓名]
+        // 跨 Sheet 對位：搵返 Schedules 嘅原定時間
         const sched = (cachedData.allSchedules || []).find(s => {
             const sp = parseDateStr(s[0]);
+            // 根據你提供的 log[5] (即係 Elmo [員工名]) 嚟對位
             const uKey = (s[4] || "") + " [" + (s[1] || "") + "]"; 
             return sp[0] === p[0] && sp[1] === p[1] && sp[2] === p[2] && uKey === log[5];
         });
 
         const schedTime = sched ? sched[1] : "更表時間未提供";
 
-        // 4. 三層排版內容
         h += `<div class="record-item" style="padding:12px 15px; border-bottom:1px solid #eee; background:#fff;">
             <div style="margin-bottom:6px;">
                 <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
@@ -555,7 +550,7 @@ window.chooseRecordYM = (ym) => {
     });
 
     contentEl.innerHTML = h || "<p style='padding:20px; text-align:center; color:#999;'>無紀錄</p>";
-    contentEl.style.display = 'block'; // 顯示內容
+    contentEl.style.display = 'block';
 };
 
 window.submitSupport = () => {
