@@ -460,12 +460,28 @@ window.showWeeklyDetail = (weekRange, year) => {
 };
 
 window.chooseRecordLoc = (l) => {
-    curRecordLoc = l;
-    const ymSet = [...new Set(cachedData.records.filter(r => r[2] === l).map(r => {
-        const p = parseDateStr(r[0]); return p[0] + "年" + p[1] + "月";
+    window.curRecordLoc = l;
+    
+    // 1. 搵出呢個地點所有出現過嘅 年月
+    const ymSet = [...new Set((cachedData.records || []).filter(r => r[2] === l).map(r => {
+        const p = parseDateStr(r[0]); 
+        return p[0] + "年" + p[1] + "月";
     }))].sort().reverse();
-    let h = ymSet.map(ym => `<div class="menu-btn" onclick="chooseRecordYM('${ym}')"><b>${ym}</b><span>❯</span></div>`).join('');
-    document.getElementById("listRecordYM").innerHTML = h;
+
+    // 2. 產生「下拉式」嘅標題
+    let h = ymSet.map(ym => `
+        <div class="date-group" style="margin-bottom:10px;">
+            <div class="date-header" onclick="window.chooseRecordYM('${ym}')" style="background:#f8f8f8; border:1px solid #ddd; padding:12px; display:flex; justify-content:space-between; cursor:pointer;">
+                <span>📂 <b>${ym}</b></span><span>▼</span>
+            </div>
+            <div id="content-${ym}" class="date-content" style="display:none; background:#fff;">
+                <p style="text-align:center; padding:15px; color:#999;">載入紀錄中...</p>
+            </div>
+        </div>
+    `).join('');
+
+    // 3. 塞入原本顯示年月嘅位置 (請檢查你原本 HTML 個 ID 係咪 listRecordYM)
+    document.getElementById("listRecordYM").innerHTML = h || "<p style='text-align:center; padding:20px;'>暫無紀錄</p>";
     window.showBox('recordMonthBox');
 };
 
