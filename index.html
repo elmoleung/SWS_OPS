@@ -211,35 +211,40 @@ window.doLogin = async () => {
 window.renderUI = () => {
     let h = "";
     const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
-    
-    // 1. 定義星期幾嘅名
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-    // 2. 修改格式化邏輯：拎走 padStart，加入星期
-    const formatDateInfo = (d) => {
-        const day = d.getDate(); // 唔使補零
-        const month = d.getMonth() + 1; // 唔使補零
-        const year = d.getFullYear();
+    // 呢個 Function 專門負責整出「補零」同「唔補零」兩個版本，用嚟對位同顯示
+    const getDateInfo = (d) => {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const y = d.getFullYear();
+        const d_no_zero = d.getDate();
+        const m_no_zero = d.getMonth() + 1;
         const dayName = dayNames[d.getDay()];
+
         return {
-            pure: `${day}-${month}-${year}`, // 用嚟同資料庫對比
-            full: `${day}-${month}-${year} (${dayName})` // 用嚟顯示俾人睇
+            display: `${dd}-${mm}-${y} (${dayName})`, // 顯示用: 28-02-2026 (SAT)
+            version1: `${dd}-${mm}-${y}`,             // 對位用(有0): 28-02-2026
+            version2: `${d_no_zero}-${m_no_zero}-${y}` // 對位用(無0): 28-2-2026
         };
     };
 
     const dateGroups = [
-        { label: "昨日", info: formatDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() - 1))) },
-        { label: "今日", info: formatDateInfo(hkt) },
-        { label: "翌日", info: formatDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() + 1))) }
+        { label: "昨日", info: getDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() - 1))) },
+        { label: "今日", info: getDateInfo(hkt) },
+        { label: "翌日", info: getDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() + 1))) }
     ];
 
     dateGroups.forEach(group => {
-        // 使用 .info.pure 同試算表日期對比
-        const dayScheds = (cachedData.allSchedules || []).filter(s => String(s[0]).trim() === group.info.pure);
+        // 核心改動：filter 同時檢查「有0」同「無0」兩個版本，確保你 Sheet 點打都對到
+        const dayScheds = (cachedData.allSchedules || []).filter(s => {
+            const sDate = String(s[0]).trim();
+            return sDate === group.info.version1 || sDate === group.info.version2;
+        });
         
         h += `<div class="date-group">
             <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>📅 <b>${group.label}</b> (${group.info.full})</span><span>▼</span>
+                <span>📅 <b>${group.label}</b> (${group.info.display})</span><span>▼</span>
             </div>
             <div class="date-content ${group.label === '今日' ? 'open' : ''}">`;
         
@@ -247,7 +252,11 @@ window.renderUI = () => {
         else {
             dayScheds.forEach(s => {
                 const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
-                const hasOut = (cachedData.records || []).some(r => r[0] === s[0] && r[5] === uKey && r[3] === "收工");
+                // 紀錄對位都要同時兼容兩個版本
+                const hasOut = (cachedData.records || []).some(r => 
+                    (r[0] === group.info.version1 || r[0] === group.info.version2) && 
+                    r[5] === uKey && r[3] === "收工"
+                );
                 const sParam = JSON.stringify(s).replace(/"/g, '&quot;');
                 h += `<div class="menu-btn" style="${hasOut ? 'opacity:0.4; pointer-events:none;' : ''}" onclick='window.selectJobFromList(${sParam})'>
                     <div><b>${s[3]}</b><br><small>${s[1]} ${s[4]}</small></div>
@@ -394,6 +403,7 @@ window.chooseYear = (yText) => {
 };
 
 window.showWeeklyDetail = (weekRange, year) => {
+    // 呢度 filter 邏輯維持原樣 (根據 weekRange 搵更)
     const schedules = cachedData.allSchedules.filter(s => {
         const p = parseDateStr(s[0]);
         const d = new Date(p[0], p[1]-1, p[2]);
@@ -414,7 +424,6 @@ window.showWeeklyDetail = (weekRange, year) => {
     });
 
     let h = "";
-    // 日期排序 (星期一至日)
     const sortedDates = Object.keys(days).sort((a, b) => {
         const pa = parseDateStr(a), pb = parseDateStr(b);
         return new Date(pa[0], pa[1]-1, pa[2]) - new Date(pb[0], pb[1]-1, pb[2]);
@@ -425,9 +434,14 @@ window.showWeeklyDetail = (weekRange, year) => {
         const d = new Date(p[0], p[1]-1, p[2]);
         const dayName = dayNames[d.getDay()];
 
+        // 呢度改咗：顯示做補零版本 28-02-2026
+        const dd = String(p[2]).padStart(2, '0');
+        const mm = String(p[1]).padStart(2, '0');
+        const displayDate = `${dd}-${mm}-${p[0]} (${dayName})`;
+
         h += `<div class="date-group">
             <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>📅 <b>${date} (${dayName})</b></span><span>▼</span>
+                <span>📅 <b>${displayDate}</b></span><span>▼</span>
             </div>
             <div class="date-content">`;
         
