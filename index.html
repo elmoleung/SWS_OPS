@@ -460,10 +460,13 @@ window.showWeeklyDetail = (weekRange, year) => {
             </div>
             <div class="date-content">`;
         
+        // 排序：確保同一日入面嘅更次都係由早到遲排
+        days[date].sort((a, b) => a[1].localeCompare(b[1]));
+
         days[date].forEach(s => {
-            h += `<div class="record-item">
-                <b>${s[1]}</b> ${s[4]}<br>
-                <small style="color:#666;">崗位: ${s[2] || '一般'}</small>
+            h += `<div class="record-item" style="padding:12px 15px;">
+                <div style="color:#007bff; font-weight:bold; font-size:1.1em; margin-bottom:4px;">⏰ ${s[1]}</div>
+                <div style="color:#333; font-size:1em;"> ${s[4]}</div>
             </div>`;
         });
         h += `</div></div>`;
