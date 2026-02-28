@@ -497,7 +497,7 @@ window.chooseRecordYM = (ym, safeId) => {
     const contentEl = document.getElementById("box-" + safeId);
     if (!contentEl) return;
     
-    // 原地開合切換 (Accordion)
+    // 原地開合效果
     if (contentEl.style.display === 'block') {
         contentEl.style.display = 'none';
         return;
@@ -506,7 +506,6 @@ window.chooseRecordYM = (ym, safeId) => {
     const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-    // 4. 篩選紀錄：按日期由新到舊排
     const logs = (cachedData.records || []).filter(r => {
         const p = parseDateStr(r[0]); 
         return r[2] === window.curRecordLoc && p[0] === y && String(p[1]) === String(m);
@@ -522,13 +521,13 @@ window.chooseRecordYM = (ym, safeId) => {
         const d = new Date(p[0], parseInt(p[1])-1, parseInt(p[2]));
         const dateHeader = `📅 ${displayDate} (${dayNames[d.getDay()]})`;
 
-        // 插入日期大標題 (每一日只出一次)
+        // 插入日期大標題
         if (displayDate !== lastDate) {
             h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid #007bff; margin-top:15px; text-align:left;">${dateHeader}</div>`;
             lastDate = displayDate;
         }
 
-        // 5. 跨 Sheet 對位 (搵返 Schedules 嘅時間)
+        // 對位 Schedules 攞時間
         const sched = (cachedData.allSchedules || []).find(s => {
             const sp = parseDateStr(s[0]);
             const uKey = (s[4] || "") + " [" + (s[1] || "") + "]"; 
@@ -536,15 +535,17 @@ window.chooseRecordYM = (ym, safeId) => {
         });
         const schedTime = sched ? sched[1] : "更表時間未提供";
 
-        // 6. 三層排版 (log[1]=實時時間, log[4]=Event名稱)
-        h += `<div style="padding:12px 15px; border-bottom:1px solid #eee; text-align:left;">
+        // --- 呢度係你要改嘅三層排版 ---
+        h += `<div style="padding:12px 15px; border-bottom:1px solid #eee; text-align:left; background:#fff;">
             <div style="margin-bottom:6px;">
                 <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
                 <b style="font-size:1.05em; color:#222;">${displayDate} ${schedTime}</b>
             </div>
+            
             <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
                 打卡時間✅ ${log[1]}
             </div>
+            
             <div style="color:#666; font-size:0.9em; padding-left:2px;">
                 ${log[4]}
             </div>
@@ -554,7 +555,6 @@ window.chooseRecordYM = (ym, safeId) => {
     contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
     contentEl.style.display = 'block';
 };
-
 window.submitSupport = () => {
     const msg = document.getElementById("supportMsg").value.trim();
     if(!msg) return;
