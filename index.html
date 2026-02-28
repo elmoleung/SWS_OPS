@@ -1,130 +1,130 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SWS/OPS員工打卡系統</title>
-    <style>
-        :root { --primary: #000; --bg: #f2f2f7; --success: #34c759; --blue: #007aff; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin:0; font-family:-apple-system, 'SF Pro Display', sans-serif; background: var(--bg); color: #1c1c1e; }
-        .card { background:white; width:92%; max-width:400px; padding:25px; border-radius:28px; box-shadow:0 10px 30px rgba(0,0,0,0.08); text-align:center; margin: 20px auto; display: none; }
-        .active { display: block !important; animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-        h2 { margin-bottom:20px; font-size:22px; font-weight:700; }
-        button { width:100%; padding:18px; border-radius:16px; border:none; background:var(--primary); color:white; font-size:16px; font-weight:600; margin-top:10px; cursor:pointer; }
-        button:active { opacity: 0.7; transform: scale(0.98); }
-        button:disabled { background: #ccc !important; }
-        .secondary { background:#e5e5e7; color:#000; }
-        .home-link { color: var(--blue); cursor: pointer; display: block; margin-top: 15px; font-size: 15px; font-weight: 600; text-decoration: none; }
-        #btnIn { background: #FFFBCC; color: #856404; border: 1px solid #ffeeba; }
-        #btnOut { background: #CCE5FF; color: #004085; border: 1px solid #b8daff; }
-        .menu-btn { text-align:left; padding:18px; background:#fff; margin-bottom:12px; border-radius:18px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
-        .record-item { text-align:left; padding:15px; border-bottom:1px solid #f2f2f7; font-size:14px; position: relative; }
-        .tag { font-size:11px; padding:4px 10px; border-radius:8px; font-weight:800; display: inline-block; min-width: 50px; text-align: center; }
-        .tag-in { background: #FFFBCC; color: #856404; border: 0.5px solid #ffeeba; }
-        .tag-out { background: #CCE5FF; color: #004085; border: 0.5px solid #b8daff; }
-        input, textarea { width:100%; padding:18px; margin-bottom:15px; border-radius:16px; border:1.5px solid #d1d1d6; font-size:16px; outline:none; }
-        .loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(3px); }
-        .big-check { font-size: 70px; margin-bottom: 10px; }
-        .date-group { border: 1px solid #e5e5e7; border-radius: 12px; margin-bottom: 10px; overflow: hidden; background: #fff; }
-        .date-header { background: #f9f9fb; padding: 15px; text-align: left; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .date-content { display: none; padding: 0 15px; background: #fff; border-top: 1px solid #eee; }
-        .date-content.open { display: block; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SWS/OPS員工打卡系統</title>
+    <style>
+        :root { --primary: #000; --bg: #f2f2f7; --success: #34c759; --blue: #007aff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin:0; font-family:-apple-system, 'SF Pro Display', sans-serif; background: var(--bg); color: #1c1c1e; }
+        .card { background:white; width:92%; max-width:400px; padding:25px; border-radius:28px; box-shadow:0 10px 30px rgba(0,0,0,0.08); text-align:center; margin: 20px auto; display: none; }
+        .active { display: block !important; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        h2 { margin-bottom:20px; font-size:22px; font-weight:700; }
+        button { width:100%; padding:18px; border-radius:16px; border:none; background:var(--primary); color:white; font-size:16px; font-weight:600; margin-top:10px; cursor:pointer; }
+        button:active { opacity: 0.7; transform: scale(0.98); }
+        button:disabled { background: #ccc !important; }
+        .secondary { background:#e5e5e7; color:#000; }
+        .home-link { color: var(--blue); cursor: pointer; display: block; margin-top: 15px; font-size: 15px; font-weight: 600; text-decoration: none; }
+        #btnIn { background: #FFFBCC; color: #856404; border: 1px solid #ffeeba; }
+        #btnOut { background: #CCE5FF; color: #004085; border: 1px solid #b8daff; }
+        .menu-btn { text-align:left; padding:18px; background:#fff; margin-bottom:12px; border-radius:18px; border:1px solid #eee; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+        .record-item { text-align:left; padding:15px; border-bottom:1px solid #f2f2f7; font-size:14px; position: relative; }
+        .tag { font-size:11px; padding:4px 10px; border-radius:8px; font-weight:800; display: inline-block; min-width: 50px; text-align: center; }
+        .tag-in { background: #FFFBCC; color: #856404; border: 0.5px solid #ffeeba; }
+        .tag-out { background: #CCE5FF; color: #004085; border: 0.5px solid #b8daff; }
+        input, textarea { width:100%; padding:18px; margin-bottom:15px; border-radius:16px; border:1.5px solid #d1d1d6; font-size:16px; outline:none; }
+        .loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(3px); }
+        .big-check { font-size: 70px; margin-bottom: 10px; }
+        .date-group { border: 1px solid #e5e5e7; border-radius: 12px; margin-bottom: 10px; overflow: hidden; background: #fff; }
+        .date-header { background: #f9f9fb; padding: 15px; text-align: left; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .date-content { display: none; padding: 0 15px; background: #fff; border-top: 1px solid #eee; }
+        .date-content.open { display: block; }
+    </style>
 </head>
 <body>
 
 <div id="loading" class="loading-overlay"><b>⌛ 處理中...</b></div>
 
 <div class="card active" id="loginBox">
-    <div style="font-size: 50px; margin-bottom: 15px;">💼</div>
-    <h2>SWS/OPS 打卡系統</h2>
-    <input id="name" placeholder="登入名稱" autocomplete="off">
-    <input id="pin" type="password" placeholder="PIN碼" inputmode="numeric">
-    <button id="loginBtn" onclick="doLogin()">登入系統</button>
+    <div style="font-size: 50px; margin-bottom: 15px;">💼</div>
+    <h2>SWS/OPS 打卡系統</h2>
+    <input id="name" placeholder="登入名稱" autocomplete="off">
+    <input id="pin" type="password" placeholder="PIN碼" inputmode="numeric">
+    <button id="loginBtn" onclick="doLogin()">登入系統</button>
 </div>
 
 <div class="card" id="menuBox">
-    <h2 id="userHello">你好</h2>
-    <div class="menu-btn" onclick="showBox('clockInBox')"><div>📍 <b>我要打卡！</b></div><span>❯</span></div>
-    <div class="menu-btn" onclick="startSchedFlow()"><div>📅 <b>我想睇更！</b></div><span>❯</span></div>
-    <div class="menu-btn" onclick="startRecordFlow()"><div>📜 <b>打卡紀錄</b></div><span>❯</span></div>
-    <div class="menu-btn" onclick="showBox('supportBox')"><div>🛠️ <b>技術支援</b></div><span>❯</span></div>
-    <button class="secondary" onclick="location.reload()" style="margin-top:20px;">登出系統</button>
+    <h2 id="userHello">你好</h2>
+    <div class="menu-btn" onclick="showBox('clockInBox')"><div>📍 <b>我要打卡！</b></div><span>❯</span></div>
+    <div class="menu-btn" onclick="startSchedFlow()"><div>📅 <b>我想睇更！</b></div><span>❯</span></div>
+    <div class="menu-btn" onclick="startRecordFlow()"><div>📜 <b>打卡紀錄</b></div><span>❯</span></div>
+    <div class="menu-btn" onclick="showBox('supportBox')"><div>🛠️ <b>技術支援</b></div><span>❯</span></div>
+    <button class="secondary" onclick="location.reload()" style="margin-top:20px;">登出系統</button>
 </div>
 
 <div class="card" id="clockInBox">
-    <h2>最近三日(昨/今/明)更次</h2>
-    <div id="todaySchedules"></div>
-    <button class="secondary" onclick="showBox('menuBox')">返回</button>
+    <h2>最近三日(昨/今/明)更次</h2>
+    <div id="todaySchedules"></div>
+    <button class="secondary" onclick="showBox('menuBox')">返回</button>
 </div>
 
 <div class="card" id="typeBox">
-    <h2 id="selectedJobTitle">地點</h2>
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleCapture(this)" style="display:none">
-    <button id="btnIn" onclick="triggerCamera('翻工')">🌅 翻工打卡</button>
-    <button id="btnOut" onclick="triggerCamera('收工')">🌇 收工打卡</button>
-    <button class="secondary" onclick="showBox('clockInBox')">返回</button>
-    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+    <h2 id="selectedJobTitle">地點</h2>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleCapture(this)" style="display:none">
+    <button id="btnIn" onclick="triggerCamera('翻工')">🌅 翻工打卡</button>
+    <button id="btnOut" onclick="triggerCamera('收工')">🌇 收工打卡</button>
+    <button class="secondary" onclick="showBox('clockInBox')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
 </div>
 
 <div class="card" id="successBox">
-    <div class="big-check">✅</div>
-    <h2 id="successType">打卡成功</h2>
-    <p id="successTime" style="font-size:20px; font-weight:bold; margin:10px 0;"></p>
-    <p id="successDetail" style="color:#666; font-size:14px;"></p>
-    <button onclick="showBox('menuBox')">返回主頁</button>
+    <div class="big-check">✅</div>
+    <h2 id="successType">打卡成功</h2>
+    <p id="successTime" style="font-size:20px; font-weight:bold; margin:10px 0;"></p>
+    <p id="successDetail" style="color:#666; font-size:14px;"></p>
+    <button onclick="showBox('menuBox')">返回主頁</button>
 </div>
 
 <div class="card" id="boxLoc">
-    <h2>選擇地點</h2>
-    <div id="listLoc"></div>
-    <button class="secondary" onclick="showBox('menuBox')">返回</button>
+    <h2>選擇地點</h2>
+    <div id="listLoc"></div>
+    <button class="secondary" onclick="showBox('menuBox')">返回</button>
 </div>
 
 <div class="card" id="boxYM">
-    <h2 id="titleYM">選擇年份</h2>
-    <div id="listYM"></div>
-    <button class="secondary" onclick="showBox('boxLoc')">返回</button>
-    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+    <h2 id="titleYM">選擇年份</h2>
+    <div id="listYM"></div>
+    <button class="secondary" onclick="showBox('boxLoc')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
 </div>
 
 <div class="card" id="boxFinal">
-    <h2 id="titleFinal">選擇星期</h2>
-    <div id="listFinal" style="max-height:400px; overflow-y:auto;"></div>
-    <button class="secondary" onclick="showBox('boxYM')">返回</button>
-    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+    <h2 id="titleFinal">選擇星期</h2>
+    <div id="listFinal" style="max-height:400px; overflow-y:auto;"></div>
+    <button class="secondary" onclick="showBox('boxYM')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
 </div>
 
 <div class="card" id="recordLocBox">
-    <div style="font-size: 40px; margin-bottom: 10px;">🏢</div>
-    <h2>選擇紀錄地點</h2>
-    <div id="listRecordLoc"></div>
-    <button class="secondary" onclick="showBox('menuBox')">返回主頁</button>
+    <div style="font-size: 40px; margin-bottom: 10px;">🏢</div>
+    <h2>選擇紀錄地點</h2>
+    <div id="listRecordLoc"></div>
+    <button class="secondary" onclick="showBox('menuBox')">返回主頁</button>
 </div>
 
 <div class="card" id="recordMonthBox">
-    <h2 id="titleRecordYM">選擇月份</h2>
-    <div id="listRecordYM"></div>
-    <button class="secondary" onclick="showBox('recordLocBox')">返回</button>
-    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
+    <h2 id="titleRecordYM">選擇月份</h2>
+    <div id="listRecordYM"></div>
+    <button class="secondary" onclick="showBox('recordLocBox')">返回</button>
+    <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
 </div>
 
 <div class="card" id="recordFinalBox">
-    <h2 id="titleRecordFinal">更表詳情</h2>
-    <div id="listRecordFinal" style="max-height:450px; overflow-y:auto; padding:5px;"></div>
-    
-    <button class="secondary" onclick="showBox('boxFinal')">返回星期列表</button>
-    <button class="secondary" onclick="showBox('menuBox')" style="margin-top:10px;">返回主頁</button>
+    <h2 id="titleRecordFinal">更表詳情</h2>
+    <div id="listRecordFinal" style="max-height:450px; overflow-y:auto; padding:5px;"></div>
+    
+    <button class="secondary" onclick="showBox('boxFinal')">返回星期列表</button>
+    <button class="secondary" onclick="showBox('menuBox')" style="margin-top:10px;">返回主頁</button>
 </div>
 
 <div class="card" id="supportBox">
-    <h2>技術支援</h2>
-    <p style="font-size: 14px; color: #ff3b30; font-weight: bold; margin-bottom: 15px;">⚠️ 有緊急事請自行聯絡Elmo</p>
-    <textarea id="supportMsg" rows="4" placeholder="請輸入留言..."></textarea>
-    <button id="supportBtn" onclick="submitSupport()">提交留言</button>
-    <button class="secondary" onclick="showBox('menuBox')">返回</button>
+    <h2>技術支援</h2>
+    <p style="font-size: 14px; color: #ff3b30; font-weight: bold; margin-bottom: 15px;">⚠️ 有緊急事請自行聯絡Elmo</p>
+    <textarea id="supportMsg" rows="4" placeholder="請輸入留言..."></textarea>
+    <button id="supportBtn" onclick="submitSupport()">提交留言</button>
+    <button class="secondary" onclick="showBox('menuBox')">返回</button>
 </div>
 
 <script type="module">
@@ -133,12 +133,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDTT86mpGJJMByToRMi7b8jjI0LoNJarNo",
-    authDomain: "sws-ops.firebaseapp.com",
-    projectId: "sws-ops",
-    storageBucket: "sws-ops.firebasestorage.app",
-    messagingSenderId: "985280948590",
-    appId: "1:985280948590:web:3aad1539136659b4dc797f"
+    apiKey: "AIzaSyDTT86mpGJJMByToRMi7b8jjI0LoNJarNo",
+    authDomain: "sws-ops.firebaseapp.com",
+    projectId: "sws-ops",
+    storageBucket: "sws-ops.firebasestorage.app",
+    messagingSenderId: "985280948590",
+    appId: "1:985280948590:web:3aad1539136659b4dc797f"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -154,428 +154,426 @@ let clockType = "";
 
 // 核心 Helper: 統一解析日期
 function parseDateStr(s) {
-    if (!s) return ["未知", "未知", "未知"];
-    let str = String(s);
-    let cleanStr = str.replace(/[/\sT]/g, "-");
-    let parts = cleanStr.split("-");
-    if (parts[0].length === 4) return [parts[0], parseInt(parts[1]).toString(), parseInt(parts[2]).toString()];
-    if (parts[2] && parts[2].length === 4) return [parts[2], parseInt(parts[1]).toString(), parseInt(parts[0]).toString()];
-    return ["未知", "未知", "未知"];
+    if (!s) return ["未知", "未知", "未知"];
+    let str = String(s);
+    let cleanStr = str.replace(/[/\sT]/g, "-");
+    let parts = cleanStr.split("-");
+    if (parts[0].length === 4) return [parts[0], parseInt(parts[1]).toString(), parseInt(parts[2]).toString()];
+    if (parts[2] && parts[2].length === 4) return [parts[2], parseInt(parts[1]).toString(), parseInt(parts[0]).toString()];
+    return ["未知", "未知", "未知"];
 }
 
 // 核心 Helper: 取得香港今日日期格式
 const getHKTodayFormats = () => {
-    const d = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
-    const d0 = String(d.getDate()).padStart(2, '0');
-    const m0 = String(d.getMonth() + 1).padStart(2, '0');
-    const y = d.getFullYear();
-    return [`${d.getDate()}-${d.getMonth()+1}-${y}`, `${d0}-${m0}-${y}`, `${d.getDate()}/${d.getMonth()+1}/${y}`, `${d0}/${m0}/${y}`];
+    const d = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+    const d0 = String(d.getDate()).padStart(2, '0');
+    const m0 = String(d.getMonth() + 1).padStart(2, '0');
+    const y = d.getFullYear();
+    return [`${d.getDate()}-${d.getMonth()+1}-${y}`, `${d0}-${m0}-${y}`, `${d.getDate()}/${d.getMonth()+1}/${y}`, `${d0}/${m0}/${y}`];
 };
 
 window.showBox = (id) => {
-    const cards = document.getElementsByClassName('card');
-    for(let i=0; i<cards.length; i++) cards[i].classList.remove('active');
-    document.getElementById(id).classList.add('active');
-    window.scrollTo(0,0);
+    const cards = document.getElementsByClassName('card');
+    for(let i=0; i<cards.length; i++) cards[i].classList.remove('active');
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
 };
 
 window.doLogin = async () => {
-    const n = document.getElementById("name").value.trim();
-    const p = document.getElementById("pin").value.trim();
-    if(!n || !p) return;
-    
-    const btn = document.getElementById("loginBtn");
-    const loading = document.getElementById("loading");
-    btn.innerText = "驗證中..."; btn.disabled = true;
-    loading.style.display = "flex";
+    const n = document.getElementById("name").value.trim();
+    const p = document.getElementById("pin").value.trim();
+    if(!n || !p) return;
+    
+    const btn = document.getElementById("loginBtn");
+    const loading = document.getElementById("loading");
+    btn.innerText = "驗證中..."; btn.disabled = true;
+    loading.style.display = "flex";
 
-    try {
-        const q = query(collection(db, "employees"), where("name", "==", n), where("pin", "==", p));
-        const snap = await getDocs(q);
-        if(!snap.empty) {
-            const response = await fetch(`${WEB_APP_URL}?action=refresh&name=${encodeURIComponent(n)}`);
-            cachedData = await response.json();
-            currentUser = n;
-            window.renderUI();
-            document.getElementById("userHello").innerText = "你好，" + currentUser;
-            window.showBox('menuBox');
-        } else {
-            alert("❌ 登入失敗");
-        }
-    } catch(e) { alert("連線失敗: " + e.message); }
-    btn.innerText = "登入系統"; btn.disabled = false;
-    loading.style.display = "none";
+    try {
+        const q = query(collection(db, "employees"), where("name", "==", n), where("pin", "==", p));
+        const snap = await getDocs(q);
+        if(!snap.empty) {
+            const response = await fetch(`${WEB_APP_URL}?action=refresh&name=${encodeURIComponent(n)}`);
+            cachedData = await response.json();
+            currentUser = n;
+            window.renderUI();
+            document.getElementById("userHello").innerText = "你好，" + currentUser;
+            window.showBox('menuBox');
+        } else {
+            alert("❌ 登入失敗");
+        }
+    } catch(e) { alert("連線失敗: " + e.message); }
+    btn.innerText = "登入系統"; btn.disabled = false;
+    loading.style.display = "none";
 };
 
 window.renderUI = () => {
-    let h = "";
-    const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
-    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    let h = "";
+    const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-    // 呢個 Function 專門負責整出「補零」同「唔補零」兩個版本，用嚟對位同顯示
-    const getDateInfo = (d) => {
-        const dd = String(d.getDate()).padStart(2, '0');
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const y = d.getFullYear();
-        const d_no_zero = d.getDate();
-        const m_no_zero = d.getMonth() + 1;
-        const dayName = dayNames[d.getDay()];
+    // 呢個 Function 專門負責整出「補零」同「唔補零」兩個版本，用嚟對位同顯示
+    const getDateInfo = (d) => {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const y = d.getFullYear();
+        const d_no_zero = d.getDate();
+        const m_no_zero = d.getMonth() + 1;
+        const dayName = dayNames[d.getDay()];
 
-        return {
-            display: `${dd}-${mm}-${y} (${dayName})`, // 顯示用: 28-02-2026 (SAT)
-            version1: `${dd}-${mm}-${y}`,             // 對位用(有0): 28-02-2026
-            version2: `${d_no_zero}-${m_no_zero}-${y}` // 對位用(無0): 28-2-2026
-        };
-    };
+        return {
+            display: `${dd}-${mm}-${y} (${dayName})`, // 顯示用: 28-02-2026 (SAT)
+            version1: `${dd}-${mm}-${y}`,             // 對位用(有0): 28-02-2026
+            version2: `${d_no_zero}-${m_no_zero}-${y}` // 對位用(無0): 28-2-2026
+        };
+    };
 
-    const dateGroups = [
-        { label: "昨日", info: getDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() - 1))) },
-        { label: "今日", info: getDateInfo(hkt) },
-        { label: "翌日", info: getDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() + 1))) }
-    ];
+    const dateGroups = [
+        { label: "昨日", info: getDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() - 1))) },
+        { label: "今日", info: getDateInfo(hkt) },
+        { label: "翌日", info: getDateInfo(new Date(new Date(hkt).setDate(hkt.getDate() + 1))) }
+    ];
 
-    dateGroups.forEach(group => {
-        // 核心改動：filter 同時檢查「有0」同「無0」兩個版本，確保你 Sheet 點打都對到
-        const dayScheds = (cachedData.allSchedules || []).filter(s => {
-            const sDate = String(s[0]).trim();
-            return sDate === group.info.version1 || sDate === group.info.version2;
-        });
-        
-        h += `<div class="date-group">
-            <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>📅 <b>${group.label}</b> (${group.info.display})</span><span>▼</span>
-            </div>
-            <div class="date-content ${group.label === '今日' ? 'open' : ''}">`;
-        
-        if (dayScheds.length === 0) h += `<p style="color:#999; padding:15px; text-align:center;">無安排更次</p>`;
-        else {
-            dayScheds.forEach(s => {
-                const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
-                // 紀錄對位都要同時兼容兩個版本
-                const hasOut = (cachedData.records || []).some(r => 
-                    (r[0] === group.info.version1 || r[0] === group.info.version2) && 
-                    r[5] === uKey && r[3] === "收工"
-                );
-                const sParam = JSON.stringify(s).replace(/"/g, '&quot;');
-                h += `<div class="menu-btn" style="${hasOut ? 'opacity:0.4; pointer-events:none;' : ''}" onclick='window.selectJobFromList(${sParam})'>
-                    <div><b>${s[3]}</b><br><small>${s[1]} ${s[4]}</small></div>
-                    <span style="color:var(--blue);">${hasOut ? "✅ 已完更" : "❯"}</span>
-                </div>`;
-            });
-        }
-        h += `</div></div>`;
-    });
-    document.getElementById("todaySchedules").innerHTML = h;
+    dateGroups.forEach(group => {
+        // 核心改動：filter 同時檢查「有0」同「無0」兩個版本，確保你 Sheet 點打都對到
+        const dayScheds = (cachedData.allSchedules || []).filter(s => {
+            const sDate = String(s[0]).trim();
+            return sDate === group.info.version1 || sDate === group.info.version2;
+        });
+        
+        h += `<div class="date-group">
+            <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                <span>📅 <b>${group.label}</b> (${group.info.display})</span><span>▼</span>
+            </div>
+            <div class="date-content ${group.label === '今日' ? 'open' : ''}">`;
+        
+        if (dayScheds.length === 0) h += `<p style="color:#999; padding:15px; text-align:center;">無安排更次</p>`;
+        else {
+            dayScheds.forEach(s => {
+                const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
+                // 紀錄對位都要同時兼容兩個版本
+                const hasOut = (cachedData.records || []).some(r => 
+                    (r[0] === group.info.version1 || r[0] === group.info.version2) && 
+                    r[5] === uKey && r[3] === "收工"
+                );
+                const sParam = JSON.stringify(s).replace(/"/g, '&quot;');
+                h += `<div class="menu-btn" style="${hasOut ? 'opacity:0.4; pointer-events:none;' : ''}" onclick='window.selectJobFromList(${sParam})'>
+                    <div><b>${s[3]}</b><br><small>${s[1]} ${s[4]}</small></div>
+                    <span style="color:var(--blue);">${hasOut ? "✅ 已完更" : "❯"}</span>
+                </div>`;
+            });
+        }
+        h += `</div></div>`;
+    });
+    document.getElementById("todaySchedules").innerHTML = h;
 };
 
 window.selectJobFromList = (s) => {
-    selectedSchedule = s;
-    const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
-    const hasIn = (cachedData.records || []).some(r => String(r[0]).trim() === String(s[0]).trim() && r[5] === uKey && r[3] === "翻工");
-    const hasOut = (cachedData.records || []).some(r => String(r[0]).trim() === String(s[0]).trim() && r[5] === uKey && r[3] === "收工");
-    
-    document.getElementById("selectedJobTitle").innerText = s[3];
-    const bIn = document.getElementById("btnIn");
-    const bOut = document.getElementById("btnOut");
-    
-    bIn.disabled = hasIn; bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; bIn.style.opacity = hasIn ? "0.5" : "1";
-    bOut.disabled = hasOut; bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; bOut.style.opacity = hasOut ? "0.5" : "1";
-    window.showBox('typeBox');
+    selectedSchedule = s;
+    const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
+    const hasIn = (cachedData.records || []).some(r => String(r[0]).trim() === String(s[0]).trim() && r[5] === uKey && r[3] === "翻工");
+    const hasOut = (cachedData.records || []).some(r => String(r[0]).trim() === String(s[0]).trim() && r[5] === uKey && r[3] === "收工");
+    
+    document.getElementById("selectedJobTitle").innerText = s[3];
+    const bIn = document.getElementById("btnIn");
+    const bOut = document.getElementById("btnOut");
+    
+    bIn.disabled = hasIn; bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; bIn.style.opacity = hasIn ? "0.5" : "1";
+    bOut.disabled = hasOut; bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; bOut.style.opacity = hasOut ? "0.5" : "1";
+    window.showBox('typeBox');
 };
 
 window.triggerCamera = (t) => {
-    const todayRecs = (cachedData.records || []).filter(r => getHKTodayFormats().includes(String(r[0]).trim()));
-    const lastAction = todayRecs.length > 0 ? todayRecs[todayRecs.length - 1][3] : null;
+    const todayRecs = (cachedData.records || []).filter(r => getHKTodayFormats().includes(String(r[0]).trim()));
+    const lastAction = todayRecs.length > 0 ? todayRecs[todayRecs.length - 1][3] : null;
 
-    if (t === "收工" && !lastAction) return alert("⚠️ 錯誤：今日仲未有「翻工」紀錄！");
-    if (lastAction === t) return alert(`⚠️ 錯誤：你最後一筆已經係「${lastAction}」！`);
+    if (t === "收工" && !lastAction) return alert("⚠️ 錯誤：今日仲未有「翻工」紀錄！");
+    if (lastAction === t) return alert(`⚠️ 錯誤：你最後一筆已經係「${lastAction}」！`);
 
-    clockType = t;
-    document.getElementById("cameraInput").click();
+    clockType = t;
+    document.getElementById("cameraInput").click();
 };
 
 window.handleCapture = (input) => {
-    if (!input.files[0]) return;
-    const loading = document.getElementById("loading");
-    loading.style.display = "flex";
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const maxW = 500;
-            canvas.width = maxW;
-            canvas.height = img.height * (maxW / img.width);
-            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-            const detail = (selectedSchedule[4] || "") + " [" + (selectedSchedule[1] || "") + "]";
-            // 喺 body: JSON.stringify(...) 之後，確保個 .then 係接得住嘅
-            fetch(WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "save", name: currentUser, location: selectedSchedule[3], type: clockType, detail: detail, image: canvas.toDataURL("image/jpeg", 0.4) })
-            })
-            .then(r => r.json()).then(res => {
-                // 1. 更新成功畫面
-                document.getElementById("successType").innerText = clockType + "成功";
-                document.getElementById("successTime").innerText = res.time;
-                document.getElementById("successDetail").innerText = selectedSchedule[3];
-                
-                // 2. 修正資料順序 (日期, 實時時間, 地點, 類型, Event, 對位Key)
-                cachedData.records.push([
-                    selectedSchedule[0], 
-                    res.time,            
-                    selectedSchedule[3], 
-                    clockType,           
-                    selectedSchedule[4], 
-                    detail               
-                ]);
-                
-                window.renderUI();
-                window.showBox('successBox');
-                loading.style.display = "none";
-            }).catch(err => {
-                alert("傳輸失敗：" + err);
-                loading.style.display = "none";
-            });
-        }; // 呢個係 img.onload 嘅結尾
-        img.src = e.target.result;
-    }; // 呢個係 reader.onload 嘅結尾
-    reader.readAsDataURL(input.files[0]);
+    if (!input.files[0]) return;
+    const loading = document.getElementById("loading");
+    loading.style.display = "flex";
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxW = 500;
+            canvas.width = maxW;
+            canvas.height = img.height * (maxW / img.width);
+            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            const detail = (selectedSchedule[4] || "") + " [" + (selectedSchedule[1] || "") + "]";
+            // 喺 body: JSON.stringify(...) 之後，確保個 .then 係接得住嘅
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "save", name: currentUser, location: selectedSchedule[3], type: clockType, detail: detail, image: canvas.toDataURL("image/jpeg", 0.4) })
+            })
+            .then(r => r.json()).then(res => {
+                // 1. 更新成功畫面
+                document.getElementById("successType").innerText = clockType + "成功";
+                document.getElementById("successTime").innerText = res.time;
+                document.getElementById("successDetail").innerText = selectedSchedule[3];
+                
+                // 2. 修正資料順序 (日期, 實時時間, 地點, 類型, Event, 對位Key)
+                cachedData.records.push([
+                    selectedSchedule[0], 
+                    res.time,            
+                    selectedSchedule[3], 
+                    clockType,           
+                    selectedSchedule[4], 
+                    detail               
+                ]);
+                
+                window.renderUI();
+                window.showBox('successBox');
+                loading.style.display = "none";
+            }).catch(err => {
+                alert("傳輸失敗：" + err);
+                loading.style.display = "none";
+            });
+        }; // 呢個係 img.onload 嘅結尾
+        img.src = e.target.result;
+    }; // 呢個係 reader.onload 嘅結尾
+    reader.readAsDataURL(input.files[0]);
 };
 // 補回缺失的導航功能
 window.startSchedFlow = () => {
-    const locs = [...new Set(cachedData.allSchedules.map(s => s[3]))];
-    let h = "";
-    locs.forEach(l => h += `<div class="menu-btn" onclick="chooseLoc('${l}')"><b>${l}</b><span>❯</span></div>`);
-    document.getElementById("listLoc").innerHTML = h;
-    window.showBox('boxLoc');
+    const locs = [...new Set(cachedData.allSchedules.map(s => s[3]))];
+    let h = "";
+    locs.forEach(l => h += `<div class="menu-btn" onclick="chooseLoc('${l}')"><b>${l}</b><span>❯</span></div>`);
+    document.getElementById("listLoc").innerHTML = h;
+    window.showBox('boxLoc');
 };
 
 window.startRecordFlow = () => {
-    const locs = [...new Set(cachedData.records.map(r => r[2]))];
-    let h = "";
-    locs.forEach(l => h += `<div class="menu-btn" onclick="chooseRecordLoc('${l}')"><b>${l}</b><span>❯</span></div>`);
-    document.getElementById("listRecordLoc").innerHTML = h;
-    window.showBox('recordLocBox');
+    const locs = [...new Set(cachedData.records.map(r => r[2]))];
+    let h = "";
+    locs.forEach(l => h += `<div class="menu-btn" onclick="chooseRecordLoc('${l}')"><b>${l}</b><span>❯</span></div>`);
+    document.getElementById("listRecordLoc").innerHTML = h;
+    window.showBox('recordLocBox');
 };
 
 window.chooseLoc = (l) => {
-    curL = l;
-    // 只提取年份 (例如 2026年)
-    const yearSet = [...new Set(cachedData.allSchedules.filter(s => s[3] === l).map(s => {
-        const p = parseDateStr(s[0]); 
-        return p[0] + "年";
-    }))].sort().reverse();
-    
-    let h = "";
-    yearSet.forEach(y => {
-        // 撳完年份會去 chooseYear
-        h += `<div class="menu-btn" onclick="chooseYear('${y}')"><b>${y}</b><span>❯</span></div>`;
-    });
-    document.getElementById("listYM").innerHTML = h;
-    document.getElementById("titleYM").innerText = l; // 顯示地點名
-    window.showBox('boxYM');
+    curL = l;
+    // 只提取年份 (例如 2026年)
+    const yearSet = [...new Set(cachedData.allSchedules.filter(s => s[3] === l).map(s => {
+        const p = parseDateStr(s[0]); 
+        return p[0] + "年";
+    }))].sort().reverse();
+    
+    let h = "";
+    yearSet.forEach(y => {
+        // 撳完年份會去 chooseYear
+        h += `<div class="menu-btn" onclick="chooseYear('${y}')"><b>${y}</b><span>❯</span></div>`;
+    });
+    document.getElementById("listYM").innerHTML = h;
+    document.getElementById("titleYM").innerText = l; // 顯示地點名
+    window.showBox('boxYM');
 };
 
 window.chooseYear = (yText) => {
-    const targetYear = yText.replace("年", "");
-    const schedules = cachedData.allSchedules.filter(s => {
-        const p = parseDateStr(s[0]); 
-        return s[3] === curL && p[0] === targetYear;
-    });
+    const targetYear = yText.replace("年", "");
+    const schedules = cachedData.allSchedules.filter(s => {
+        const p = parseDateStr(s[0]); 
+        return s[3] === curL && p[0] === targetYear;
+    });
 
-    const weeks = {};
-    schedules.forEach(s => {
-        const p = parseDateStr(s[0]);
-        const d = new Date(p[0], p[1]-1, p[2]);
-        const day = d.getDay(); 
-        const diff = d.getDate() - (day === 0 ? 6 : day - 1); 
-        const monday = new Date(new Date(d).setDate(diff));
-        const sunday = new Date(new Date(monday).setDate(monday.getDate() + 6));
-        const weekStr = `${monday.getDate()}/${monday.getMonth()+1} - ${sunday.getDate()}/${sunday.getMonth()+1}`;
-        if (!weeks[weekStr]) weeks[weekStr] = [];
-        weeks[weekStr].push(s);
-    });
+    const weeks = {};
+    schedules.forEach(s => {
+        const p = parseDateStr(s[0]);
+        const d = new Date(p[0], p[1]-1, p[2]);
+        const day = d.getDay(); 
+        const diff = d.getDate() - (day === 0 ? 6 : day - 1); 
+        const monday = new Date(new Date(d).setDate(diff));
+        const sunday = new Date(new Date(monday).setDate(monday.getDate() + 6));
+        const weekStr = `${monday.getDate()}/${monday.getMonth()+1} - ${sunday.getDate()}/${sunday.getMonth()+1}`;
+        if (!weeks[weekStr]) weeks[weekStr] = [];
+        weeks[weekStr].push(s);
+    });
 
-    // 將星期由新到舊排 (最近期嘅禮拜擺最頂)
-    const sortedWeeks = Object.keys(weeks).sort((a, b) => {
-        const dateA = parseInt(a.split('/')[0]);
-        const dateB = parseInt(b.split('/')[0]);
-        return dateB - dateA;
-    });
+    // 將星期由新到舊排 (最近期嘅禮拜擺最頂)
+    const sortedWeeks = Object.keys(weeks).sort((a, b) => {
+        const dateA = parseInt(a.split('/')[0]);
+        const dateB = parseInt(b.split('/')[0]);
+        return dateB - dateA;
+    });
 
-    let h = "";
-    sortedWeeks.forEach(w => {
-        h += `<div class="menu-btn" onclick="showWeeklyDetail('${w}', '${targetYear}')"><b>${w}</b><span>❯</span></div>`;
-    });
-    
-    document.getElementById("listFinal").innerHTML = h;
-    document.getElementById("titleFinal").innerText = "選擇星期";
-    window.showBox('boxFinal');
+    let h = "";
+    sortedWeeks.forEach(w => {
+        h += `<div class="menu-btn" onclick="showWeeklyDetail('${w}', '${targetYear}')"><b>${w}</b><span>❯</span></div>`;
+    });
+    
+    document.getElementById("listFinal").innerHTML = h;
+    document.getElementById("titleFinal").innerText = "選擇星期";
+    window.showBox('boxFinal');
 };
 
 window.showWeeklyDetail = (weekRange, year) => {
-    // 呢度 filter 邏輯維持原樣 (根據 weekRange 搵更)
-    const schedules = cachedData.allSchedules.filter(s => {
-        const p = parseDateStr(s[0]);
-        const d = new Date(p[0], p[1]-1, p[2]);
-        const day = d.getDay();
-        const diff = d.getDate() - (day === 0 ? 6 : day - 1); 
-        const mon = new Date(new Date(d).setDate(diff));
-        const sun = new Date(new Date(mon).setDate(mon.getDate() + 6));
-        const range = `${mon.getDate()}/${mon.getMonth()+1} - ${sun.getDate()}/${sun.getMonth()+1}`;
-        return s[3] === curL && p[0] === year && range === weekRange;
-    });
+    // 呢度 filter 邏輯維持原樣 (根據 weekRange 搵更)
+    const schedules = cachedData.allSchedules.filter(s => {
+        const p = parseDateStr(s[0]);
+        const d = new Date(p[0], p[1]-1, p[2]);
+        const day = d.getDay();
+        const diff = d.getDate() - (day === 0 ? 6 : day - 1); 
+        const mon = new Date(new Date(d).setDate(diff));
+        const sun = new Date(new Date(mon).setDate(mon.getDate() + 6));
+        const range = `${mon.getDate()}/${mon.getMonth()+1} - ${sun.getDate()}/${sun.getMonth()+1}`;
+        return s[3] === curL && p[0] === year && range === weekRange;
+    });
 
-    const days = {};
-    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-    
-    schedules.forEach(s => {
-        if (!days[s[0]]) days[s[0]] = [];
-        days[s[0]].push(s);
-    });
+    const days = {};
+    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    
+    schedules.forEach(s => {
+        if (!days[s[0]]) days[s[0]] = [];
+        days[s[0]].push(s);
+    });
 
-    let h = "";
-    const sortedDates = Object.keys(days).sort((a, b) => {
-        const pa = parseDateStr(a), pb = parseDateStr(b);
-        return new Date(pa[0], pa[1]-1, pa[2]) - new Date(pb[0], pb[1]-1, pb[2]);
-    });
+    let h = "";
+    const sortedDates = Object.keys(days).sort((a, b) => {
+        const pa = parseDateStr(a), pb = parseDateStr(b);
+        return new Date(pa[0], pa[1]-1, pa[2]) - new Date(pb[0], pb[1]-1, pb[2]);
+    });
 
-    sortedDates.forEach(date => {
-        const p = parseDateStr(date);
-        const d = new Date(p[0], p[1]-1, p[2]);
-        const dayName = dayNames[d.getDay()];
+    sortedDates.forEach(date => {
+        const p = parseDateStr(date);
+        const d = new Date(p[0], p[1]-1, p[2]);
+        const dayName = dayNames[d.getDay()];
 
-        // 呢度改咗：顯示做補零版本 28-02-2026
-        const dd = String(p[2]).padStart(2, '0');
-        const mm = String(p[1]).padStart(2, '0');
-        const displayDate = `${dd}-${mm}-${p[0]} (${dayName})`;
+        // 呢度改咗：顯示做補零版本 28-02-2026
+        const dd = String(p[2]).padStart(2, '0');
+        const mm = String(p[1]).padStart(2, '0');
+        const displayDate = `${dd}-${mm}-${p[0]} (${dayName})`;
 
-        h += `<div class="date-group">
-            <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>📅 <b>${displayDate}</b></span><span>▼</span>
-            </div>
-            <div class="date-content">`;
-        
-        days[date].forEach(s => {
-            h += `<div class="record-item">
-                <b>${s[1]}</b> ${s[4]}<br>
-                <small style="color:#666;">崗位: ${s[2] || '一般'}</small>
-            </div>`;
-        });
-        h += `</div></div>`;
-    });
+        h += `<div class="date-group">
+            <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                <span>📅 <b>${displayDate}</b></span><span>▼</span>
+            </div>
+            <div class="date-content">`;
+        
+        days[date].forEach(s => {
+            h += `<div class="record-item">
+                <b>${s[1]}</b> ${s[4]}<br>
+                <small style="color:#666;">崗位: ${s[2] || '一般'}</small>
+            </div>`;
+        });
+        h += `</div></div>`;
+    });
 
-    document.getElementById("listRecordFinal").innerHTML = h || "該星期無資料";
-    document.getElementById("titleRecordFinal").innerText = weekRange;
-    window.showBox('recordFinalBox');
+    document.getElementById("listRecordFinal").innerHTML = h || "該星期無資料";
+    document.getElementById("titleRecordFinal").innerText = weekRange;
+    window.showBox('recordFinalBox');
 };
 
 window.chooseRecordLoc = (l) => {
-    window.curRecordLoc = l;
-    
-    // 1. 搵出所有年月 (2026年2月, 2026年1月...)
-    const records = cachedData.records || [];
-    const ymSet = [...new Set(records.filter(r => r[2] === l).map(r => {
-        const p = parseDateStr(r[0]); 
-        return p[0] + "年" + p[1] + "月";
-    }))].sort().reverse();
+    window.curRecordLoc = l;
+    
+    // 1. 搵出所有年月 (2026年2月, 2026年1月...)
+    const records = cachedData.records || [];
+    const ymSet = [...new Set(records.filter(r => r[2] === l).map(r => {
+        const p = parseDateStr(r[0]); 
+        return p[0] + "年" + p[1] + "月";
+    }))].sort().reverse();
 
-    // 2. 產生「下拉資料夾」標題
-    let h = ymSet.map(ym => {
-        const safeId = ym.replace(/[年月]/g, "-");
-        return `
-            <div class="date-group" style="margin-bottom:12px; border:1px solid #ddd; border-radius:8px; overflow:hidden;">
-                <div class="date-header" onclick="window.chooseRecordYM('${ym}', '${safeId}')" style="background:#f9f9f9; padding:15px; display:flex; justify-content:space-between; cursor:pointer; font-weight:bold; align-items:center;">
-                    <span>📂 ${ym}</span>
-                    <span id="arrow-${safeId}">▼</span>
-                </div>
-                <div id="box-${safeId}" style="display:none; background:#fff; border-top:1px solid #eee;">
-                    <p style="text-align:center; padding:15px; color:#999;">載入紀錄中...</p>
-                </div>
-            </div>
-        `;
-    }).join('');
+    // 2. 產生「下拉資料夾」標題
+    let h = ymSet.map(ym => {
+        const safeId = ym.replace(/[年月]/g, "-");
+        return `
+            <div class="date-group" style="margin-bottom:12px; border:1px solid #ddd; border-radius:8px; overflow:hidden;">
+                <div class="date-header" onclick="window.chooseRecordYM('${ym}', '${safeId}')" style="background:#f9f9f9; padding:15px; display:flex; justify-content:space-between; cursor:pointer; font-weight:bold; align-items:center;">
+                    <span>📂 ${ym}</span>
+                    <span id="arrow-${safeId}">▼</span>
+                </div>
+                <div id="box-${safeId}" style="display:none; background:#fff; border-top:1px solid #eee;">
+                    <p style="text-align:center; padding:15px; color:#999;">載入紀錄中...</p>
+                </div>
+            </div>
+        `;
+    }).join('');
 
-    // 3. 搵返 listRecordYM 呢個容器
-    const container = document.getElementById("listRecordYM");
-    if (container) {
-        container.innerHTML = h || "<p style='text-align:center; padding:20px;'>此地點暫無紀錄</p>";
-        window.showBox('recordMonthBox');
-    }
+    // 3. 搵返 listRecordYM 呢個容器
+    const container = document.getElementById("listRecordYM");
+    if (container) {
+        container.innerHTML = h || "<p style='text-align:center; padding:20px;'>此地點暫無紀錄</p>";
+        window.showBox('recordMonthBox');
+    }
 };
 
 window.chooseRecordYM = (ym, safeId) => {
-    const contentEl = document.getElementById("box-" + safeId);
-    if (!contentEl) return;
-    
-    // 原地開合效果
-    if (contentEl.style.display === 'block') {
-        contentEl.style.display = 'none';
-        return;
-    }
+    const contentEl = document.getElementById("box-" + safeId);
+    if (!contentEl) return;
+    
+    // 原地開合效果
+    if (contentEl.style.display === 'block') {
+        contentEl.style.display = 'none';
+        return;
+    }
 
-    const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
-    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
+    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-    const logs = (cachedData.records || []).filter(r => {
-        const p = parseDateStr(r[0]); 
-        return r[2] === window.curRecordLoc && p[0] === y && String(p[1]) === String(m);
-    });
-    logs.sort((a, b) => parseInt(parseDateStr(b[0])[2]) - parseInt(parseDateStr(a[0])[2]));
+    const logs = (cachedData.records || []).filter(r => {
+        const p = parseDateStr(r[0]); 
+        return r[2] === window.curRecordLoc && p[0] === y && String(p[1]) === String(m);
+    });
+    logs.sort((a, b) => parseInt(parseDateStr(b[0])[2]) - parseInt(parseDateStr(a[0])[2]));
 
-    let h = "";
-    let lastDate = "";
+    let h = "";
+    let lastDate = "";
 
-    logs.forEach(log => {
-        const p = parseDateStr(log[0]);
-        const displayDate = `${String(p[2]).padStart(2, '0')}-${String(p[1]).padStart(2, '0')}-${p[0]}`;
-        const d = new Date(p[0], parseInt(p[1])-1, parseInt(p[2]));
-        const dateHeader = `📅 ${displayDate} (${dayNames[d.getDay()]})`;
+    logs.forEach(log => {
+        const p = parseDateStr(log[0]);
+        const displayDate = `${String(p[2]).padStart(2, '0')}-${String(p[1]).padStart(2, '0')}-${p[0]}`;
+        const d = new Date(p[0], parseInt(p[1])-1, parseInt(p[2]));
+        const dateHeader = `📅 ${displayDate} (${dayNames[d.getDay()]})`;
 
-        // 插入日期大標題
-        if (displayDate !== lastDate) {
-            h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid #007bff; margin-top:15px; text-align:left;">${dateHeader}</div>`;
-            lastDate = displayDate;
-        }
+        // 插入日期大標題
+        if (displayDate !== lastDate) {
+            h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid #007bff; margin-top:15px; text-align:left;">${dateHeader}</div>`;
+            lastDate = displayDate;
+        }
 
-        // 對位 Schedules 攞時間
-        const sched = (cachedData.allSchedules || []).find(s => {
-            const sp = parseDateStr(s[0]);
-            const uKey = (s[4] || "") + " [" + (s[1] || "") + "]"; 
-            return sp[0] === p[0] && sp[1] === p[1] && sp[2] === p[2] && uKey === log[5];
-        });
-        const schedTime = sched ? sched[1] : "更表時間未提供";
+        // 對位 Schedules 攞時間
+        const sched = (cachedData.allSchedules || []).find(s => {
+            const sp = parseDateStr(s[0]);
+            const uKey = (s[4] || "") + " [" + (s[1] || "") + "]"; 
+            return sp[0] === p[0] && sp[1] === p[1] && sp[2] === p[2] && uKey === log[5];
+        });
+        const schedTime = sched ? sched[1] : "更表時間未提供";
 
-        // --- 呢度係你要改嘅三層排版 ---
-        h += `<div style="padding:12px 15px; border-bottom:1px solid #eee; text-align:left; background:#fff;">
-            <div style="margin-bottom:6px;">
-                <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
-                <b style="font-size:1.05em; color:#222;">${displayDate} ${schedTime}</b>
-            </div>
-            
-            <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
-                打卡時間✅ ${log[1]}
-            </div>
-            
-            <div style="color:#666; font-size:0.9em; padding-left:2px;">
-                ${log[4]}
-            </div>
-        </div>`;
-    });
+        // --- 呢度係你要改嘅三層排版 ---
+        h += `<div style="padding:12px 15px; border-bottom:1px solid #eee; text-align:left; background:#fff;">
+            <div style="margin-bottom:6px;">
+                <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
+                <b style="font-size:1.05em; color:#222;">${displayDate} ${schedTime}</b>
+            </div>
+            
+            <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
+                打卡時間✅ ${log[1]}
+            </div>
+            
+            <div style="color:#666; font-size:0.9em; padding-left:2px;">
+                ${log[4]}
+            </div>
+        </div>`;
+    });
 
-    contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
-    contentEl.style.display = 'block';
+    contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
+    contentEl.style.display = 'block';
 };
 window.submitSupport = () => {
-    const msg = document.getElementById("supportMsg").value.trim();
-    if(!msg) return;
-    fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "support", name: currentUser, message: msg }) })
-    .then(() => { alert("收到你🫡"); window.showBox('menuBox'); });
+    const msg = document.getElementById("supportMsg").value.trim();
+    if(!msg) return;
+    fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "support", name: currentUser, message: msg }) })
+    .then(() => { alert("收到你🫡"); window.showBox('menuBox'); });
 };
 </script>
 </body>
 </html>
-
-come on final check
