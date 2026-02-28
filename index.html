@@ -84,14 +84,14 @@
 </div>
 
 <div class="card" id="boxYM">
-    <h2 id="titleYM">選擇月份</h2>
+    <h2 id="titleYM">選擇年份</h2>
     <div id="listYM"></div>
     <button class="secondary" onclick="showBox('boxLoc')">返回</button>
     <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
 </div>
 
 <div class="card" id="boxFinal">
-    <h2 id="titleFinal">更次詳情</h2>
+    <h2 id="titleFinal">選擇星期</h2>
     <div id="listFinal" style="max-height:400px; overflow-y:auto;"></div>
     <button class="secondary" onclick="showBox('boxYM')">返回</button>
     <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
@@ -114,7 +114,9 @@
 <div class="card" id="recordFinalBox">
     <h2 id="titleRecordFinal">打卡紀錄</h2>
     <div id="listRecordFinal" style="max-height:450px; overflow-y:auto; padding:5px;"></div>
-    <button class="secondary" onclick="showBox('recordMonthBox')">返回</button>
+    
+    <button class="secondary" onclick="showBox('boxFinal')">返回</button>
+    
     <a class="home-link" onclick="showBox('menuBox')">返回主頁</a>
 </div>
 
@@ -326,24 +328,113 @@ window.startRecordFlow = () => {
 
 window.chooseLoc = (l) => {
     curL = l;
-    const ymSet = [...new Set(cachedData.allSchedules.filter(s => s[3] === l).map(s => {
-        const p = parseDateStr(s[0]); return p[0] + "年" + p[1] + "月";
+    // 只提取年份 (例如 2026年)
+    const yearSet = [...new Set(cachedData.allSchedules.filter(s => s[3] === l).map(s => {
+        const p = parseDateStr(s[0]); 
+        return p[0] + "年";
     }))].sort().reverse();
+    
     let h = "";
-    ymSet.forEach(ym => h += `<div class="menu-btn" onclick="chooseYM('${ym}')"><b>${ym}</b><span>❯</span></div>`);
+    yearSet.forEach(y => {
+        // 撳完年份會去 chooseYear
+        h += `<div class="menu-btn" onclick="chooseYear('${y}')"><b>${y}</b><span>❯</span></div>`;
+    });
     document.getElementById("listYM").innerHTML = h;
-    document.getElementById("titleYM").innerText = l;
+    document.getElementById("titleYM").innerText = l; // 顯示地點名
     window.showBox('boxYM');
 };
 
-window.chooseYM = (ym) => {
-    const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
-    const list = cachedData.allSchedules.filter(s => {
-        const p = parseDateStr(s[0]); return s[3] === curL && p[0] === y && p[1] === m;
+// --- 呢段係新加嘅，貼喺 chooseLoc 之後 ---
+window.chooseYear = (yText) => {
+    const targetYear = yText.replace("年", "");
+    const schedules = cachedData.allSchedules.filter(s => {
+        const p = parseDateStr(s[0]); 
+        return s[3] === curL && p[0] === targetYear;
     });
-    let h = list.map(s => `<div class="record-item"><b>${s[0]}</b><br><small>${s[1]} ${s[4]}</small></div>`).join('');
+
+    // 自動計出「星期一至日」嘅範圍
+    const weeks = {};
+    schedules.forEach(s => {
+        const p = parseDateStr(s[0]);
+        const d = new Date(p[0], p[1]-1, p[2]);
+        const day = d.getDay(); 
+        // 搵返嗰個禮拜嘅星期一 (修正星期日邏輯)
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+        const monday = new Date(new Date(d).setDate(diff));
+        const sunday = new Date(new Date(monday).setDate(monday.getDate() + 6));
+        
+        // 格式化做 23/2 - 1/3
+        const weekStr = `${monday.getDate()}/${monday.getMonth()+1} - ${sunday.getDate()}/${sunday.getMonth()+1}`;
+        
+        if (!weeks[weekStr]) weeks[weekStr] = [];
+        weeks[weekStr].push(s);
+    });
+
+    // 顯示星期列表
+    let h = "";
+    // 將星期範圍排序 (由新到舊)
+    const sortedWeeks = Object.keys(weeks).sort((a, b) => {
+        const dateA = parseInt(a.split('/')[0]);
+        const dateB = parseInt(b.split('/')[0]);
+        return dateB - dateA;
+    });
+
+    sortedWeeks.forEach(w => {
+        h += `<div class="menu-btn" onclick="showWeeklyDetail('${w}', '${targetYear}')"><b>${w}</b><span>❯</span></div>`;
+    });
+    
     document.getElementById("listFinal").innerHTML = h;
+    document.getElementById("titleFinal").innerText = "選擇星期";
     window.showBox('boxFinal');
+};
+
+window.showWeeklyDetail = (weekRange, year) => {
+    // 1. 過濾出屬於呢個星期範圍同地點嘅更次
+    const schedules = cachedData.allSchedules.filter(s => {
+        const p = parseDateStr(s[0]);
+        const d = new Date(p[0], p[1]-1, p[2]);
+        const day = d.getDay();
+        const diff = d.getDate() - (day === 0 ? 6 : day - 1); // 搵返星期一
+        const mon = new Date(new Date(d).setDate(diff));
+        const sun = new Date(new Date(mon).setDate(mon.getDate() + 6));
+        const range = `${mon.getDate()}/${mon.getMonth()+1} - ${sun.getDate()}/${sun.getMonth()+1}`;
+        return s[3] === curL && p[0] === year && range === weekRange;
+    });
+
+    // 2. 按日期先後排序
+    schedules.sort((a,b) => {
+        const pa = parseDateStr(a[0]), pb = parseDateStr(b[0]);
+        return new Date(pa[0], pa[1]-1, pa[2]) - new Date(pb[0], pb[1]-1, pb[2]);
+    });
+
+    // 3. 按日子分組
+    const days = {};
+    schedules.forEach(s => {
+        if (!days[s[0]]) days[s[0]] = [];
+        days[s[0]].push(s);
+    });
+
+    // 4. 產生下拉式 HTML (套用你鍾意嘅 date-group 樣式)
+    let h = "";
+    for (let date in days) {
+        h += `<div class="date-group">
+            <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
+                <span>📅 <b>${date}</b></span><span>▼</span>
+            </div>
+            <div class="date-content">`;
+        days[date].forEach(s => {
+            h += `<div class="record-item">
+                <b>${s[1]}</b> ${s[4]}<br>
+                <small style="color:#666;">崗位: ${s[2] || '一般'}</small>
+            </div>`;
+        });
+        h += `</div></div>`;
+    }
+
+    // 5. 顯示結果：我哋借用 recordFinalBox 嚟顯示，因為佢已經有標題同返回掣
+    document.getElementById("listRecordFinal").innerHTML = h || "該星期無資料";
+    document.getElementById("titleRecordFinal").innerText = weekRange;
+    window.showBox('recordFinalBox');
 };
 
 window.chooseRecordLoc = (l) => {
