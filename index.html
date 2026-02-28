@@ -142,7 +142,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz_b2CB8lwTIeCZRLfQxdzWZYui0764G4qRNn_82FDhhPtJkSIyKipk2KNRp1k36CTegw/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwi7PzW1qkDOi7IRTMAnvcalsJUeRuc3-Q8loMUcPhTp6i9CqW0qXFI5zNrE5Y04lW5Eg/exec";
 let currentUser = "";
 let cachedData = null;
 let curL = "";
@@ -150,103 +150,104 @@ let curRecordLoc = "";
 let selectedSchedule = null;
 let clockType = "";
 
-// --- 【新增：智能連更判定工具】 ---
-const GAP_LIMIT = 90; // 90 分鐘判定間隔
-
-// 輔助：將 "09:00" 轉做分鐘數
-function timeToMins(tStr) {
-    if (!tStr) return 0;
-    // 支援 "09:00 - 18:00" 取前面嗰個
-    const timePart = tStr.split('-')[0].trim(); 
-    const parts = timePart.split(':');
-    if (parts.length < 2) return 0;
-    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-}
-
-// 輔助：將 "09:00 - 18:00" 取後面嗰個結束時間
-function timeToEndMins(tStr) {
-    if (!tStr || !tStr.includes('-')) return timeToMins(tStr);
-    const timePart = tStr.split('-')[1].trim();
-    const parts = timePart.split(':');
-    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-}
-
-// --- 【1. 選擇更次邏輯】 ---
-window.selectSpecificJob = (d, t, l, e) => {
-    // 設定目前選中嘅更次資料 [日期, 時間, ?, 地點, 事件名]
-    selectedSchedule = [d, t, "", l, e]; 
-    
-    const uniqueKey = e + " [" + t + "]";
-    
-    // 檢查係咪已經打咗卡
-    const hasIn = (cachedData.records || []).some(r => r[0] === d && r[5] === uniqueKey && r[3] === "翻工");
-    const hasOut = (cachedData.records || []).some(r => r[0] === d && r[5] === uniqueKey && r[3] === "收工");
-
-    document.getElementById("selectedJobTitle").innerText = l;
-    
-    const btnIn = document.getElementById("btnIn");
-    const btnOut = document.getElementById("btnOut");
-
-    // 更新掣嘅狀態
-    btnIn.disabled = hasIn; 
-    btnIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡";
-    btnIn.style.opacity = hasIn ? "0.5" : "1";
-
-    btnOut.disabled = hasOut; 
-    btnOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡";
-    btnOut.style.opacity = hasOut ? "0.5" : "1";
-
-    showBox('typeBox'); 
+// 將所有 Function 綁定到 window 供 HTML onclick 使用
+window.showBox = (id) => {
+    const cards = document.getElementsByClassName('card');
+    for(let i=0; i<cards.length; i++) cards[i].classList.remove('active');
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
 };
 
-// --- 【2. 介面渲染邏輯 (唯一正確版)】 ---
-window.renderUI = () => {
-    const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
-    const formatDate = (d) => {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        return `${day}-${month}-${d.getFullYear()}`;
+window.doLogin = async () => {
+    const n = document.getElementById("name").value.trim();
+    const p = document.getElementById("pin").value.trim();
+    if(!n || !p) return;
+    
+    const btn = document.getElementById("loginBtn");
+    const loading = document.getElementById("loading");
+    btn.innerText = "驗證中..."; btn.disabled = true;
+    loading.style.display = "flex";
+
+    try {
+        // Firebase 驗證
+        const q = query(collection(db, "employees"), where("name", "==", n), where("pin", "==", p));
+        const snap = await getDocs(q);
+        
+        if(!snap.empty) {
+            // 驗證成功後，從 Google Sheet 獲取全份資料
+            const response = await fetch(`${WEB_APP_URL}?action=refresh&name=${encodeURIComponent(n)}`);
+            const resData = await response.json();
+            
+            currentUser = n;
+            cachedData = resData;
+            renderUI();
+            document.getElementById("userHello").innerText = "你好，" + currentUser;
+            window.showBox('menuBox');
+        } else {
+            alert("❌ 登入失敗：個名或者個PIN錯啊！");
+            btn.innerText = "登入系統"; btn.disabled = false;
+        }
+    } catch(e) {
+        alert("連線失敗: " + e.message);
+        btn.innerText = "登入系統"; btn.disabled = false;
+    }
+    loading.style.display = "none";
+};
+
+function renderUI() {
+    let h = "";
+    
+    // 【超級兼容工具】只要日-月-年對得上，無論係 / 定 - 定有無補0都認到
+    const isToday = (rd) => {
+        if (!rd) return false;
+        
+        // 【修正】強制轉做香港時間，確保深夜打卡都係 27 號
+        const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+        const r = String(rd).trim();
+        
+        const day = hkt.getDate();
+        const month = hkt.getMonth() + 1;
+        const year = hkt.getFullYear();
+
+        // 建立所有可能嘅香港今日格式 (27-2-2026, 27-02-2026 等)
+        const d0 = String(day).padStart(2, '0');
+        const m0 = String(month).padStart(2, '0');
+        
+        const formats = [
+            `${day}-${month}-${year}`,   // 27-2-2026
+            `${day}/${month}/${year}`,   // 27/2/2026
+            `${d0}-${m0}-${year}`,       // 27-02-2026 (你 Sheet 嗰隻)
+            `${d0}/${m0}/${year}`        // 27/02/2026
+        ];
+
+        // 用 === 完全比對，確保唔會認錯尋日
+        return formats.some(f => r === f);
     };
 
-    const dates = [
-        { label: "昨日", date: formatDate(new Date(new Date(hkt).setDate(hkt.getDate() - 1))) },
-        { label: "今日", date: formatDate(hkt) },
-        { label: "翌日", date: formatDate(new Date(new Date(hkt).setDate(hkt.getDate() + 1))) }
-    ];
-
-    let html = "";
-    dates.forEach(group => {
-        const dayScheds = (cachedData.allSchedules || [])
-            .filter(s => String(s[0]).trim() === group.date)
-            .sort((a, b) => timeToMins(a[1]) - timeToMins(b[1]));
-        
-        html += `<div class="date-group">
-            <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
-                <span>📅 <b>${group.label}</b> (${group.date})</span>
-                <span style="color:#007aff; font-size:12px;">展開/收摺 ▼</span>
-            </div>
-            <div class="date-content ${group.label === '今日' ? 'open' : ''}">`;
-
-        if (dayScheds.length === 0) {
-            html += `<p style="color:#ccc; padding:10px; text-align:center;">（無安排更次）</p>`;
-        } else {
-            dayScheds.forEach((s) => {
-                const uniqueKey = s[4] + " [" + s[1] + "]";
-                const hasIn = (cachedData.records || []).some(r => r[0] === s[0] && r[5] === uniqueKey && r[3] === "翻工");
-                const hasOut = (cachedData.records || []).some(r => r[0] === s[0] && r[5] === uniqueKey && r[3] === "收工");
-                
-                let status = hasOut ? "✅ 已完更" : (hasIn ? "🌅 已翻工" : "❯");
-                
-                html += `<div class="menu-btn" style="opacity:${hasOut?'0.5':'1'}" onclick="selectSpecificJob('${s[0]}','${s[1]}','${s[3]}','${s[4]}')">
-                    <div><b>${s[3]}</b><br><small>${s[1]} ${s[4]}</small></div>
-                    <span style="color:#007aff; font-weight:bold;">${status}</span>
-                </div>`;
-            });
-        }
-        html += `</div></div>`;
-    });
-    document.getElementById("todaySchedules").innerHTML = html;
-};
+    if(!cachedData.todaySchedules || cachedData.todaySchedules.length === 0) {
+        h = "<p style='color:#999; padding:20px;'>今日暫無安排更次</p>";
+    } else {
+        cachedData.todaySchedules.forEach((s, i) => {
+            const timeStr = s[1] || "";
+            const jobLoc = s[3] || "";
+            const eventName = s[4] || "";
+            const detail = timeStr + " " + eventName;
+            const uniqueKey = eventName + " [" + timeStr + "]";
+            
+            // 【修正版】改用 isToday 工具去檢查 r[0]
+            const hasIn = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
+            const hasOut = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "收工");
+            
+            const bothDone = hasIn && hasOut;
+            h += `<div class="menu-btn" style="${bothDone ? 'opacity:0.4; background:#e5e5e7; pointer-events:none;' : ''}" onclick="selectJob(${i})">
+                <div><b>${jobLoc}</b><br><small>${detail}</small></div>
+                <span>${bothDone ? '✅ 已完更' : '❯'}</span>
+            </div>`;
+        });
+    }
+    document.getElementById("todaySchedules").innerHTML = h;
+}
+window.renderUI = renderUI;
 
 window.startSchedFlow = () => {
     const locs = [...new Set(cachedData.allSchedules.map(s => s[3]))];
@@ -287,6 +288,53 @@ window.chooseYM = (ym) => {
     window.showBox('boxFinal');
 };
 
+window.selectJob = (i) => {
+    selectedSchedule = cachedData.todaySchedules[i];
+    const jobLoc = selectedSchedule[3];
+    const timeStr = selectedSchedule[1] || "";
+    const eventName = selectedSchedule[4] || "";
+    const uniqueKey = eventName + " [" + timeStr + "]";
+
+    const isToday = (rd) => {
+        if (!rd) return false;
+        
+        // 【修正】強制轉做香港時間，確保深夜打卡都係 27 號
+        const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
+        const r = String(rd).trim();
+        
+        const day = hkt.getDate();
+        const month = hkt.getMonth() + 1;
+        const year = hkt.getFullYear();
+
+        // 建立所有可能嘅香港今日格式 (27-2-2026, 27-02-2026 等)
+        const d0 = String(day).padStart(2, '0');
+        const m0 = String(month).padStart(2, '0');
+        
+        const formats = [
+            `${day}-${month}-${year}`,   // 27-2-2026
+            `${day}/${month}/${year}`,   // 27/2/2026
+            `${d0}-${m0}-${year}`,       // 27-02-2026 (你 Sheet 嗰隻)
+            `${d0}/${m0}/${year}`        // 27/02/2026
+        ];
+
+        // 用 === 完全比對，確保唔會認錯尋日
+        return formats.some(f => r === f);
+    };
+
+    // 改用 isToday 檢查
+    const hasIn = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "翻工");
+    const hasOut = cachedData.records.some(r => isToday(r[0]) && r[2] == jobLoc && r[5] == uniqueKey && r[3] == "收工");
+    
+    document.getElementById("selectedJobTitle").innerText = jobLoc;
+    const btnIn = document.getElementById("btnIn");
+    const btnOut = document.getElementById("btnOut");
+    
+    btnIn.disabled = hasIn; btnIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡";
+    btnIn.style.opacity = hasIn ? "0.5" : "1";
+    btnOut.disabled = hasOut; btnOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡";
+    btnOut.style.opacity = hasOut ? "0.5" : "1";
+    showBox('typeBox');
+};
 
 window.triggerCamera = (t) => {
     // --- 【Policy 檢查：未開相機前先擋住】 ---
@@ -506,41 +554,6 @@ function parseDateStr(s) {
     if (parts[2] && parts[2].length === 4) return [parts[2], parseInt(parts[1]).toString(), parseInt(parts[0]).toString()];
     return ["未知", "未知", "未知"];
 }
-// --- 補回核心切換與登入功能 ---
-window.showBox = (id) => {
-    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    window.scrollTo(0,0);
-};
-
-window.doLogin = async () => {
-    const name = document.getElementById("name").value.trim();
-    const pin = document.getElementById("pin").value.trim();
-    if (!name || !pin) return alert("請輸入名稱及PIN");
-
-    const loading = document.getElementById("loading");
-    loading.style.display = "flex";
-
-    try {
-        const q = query(collection(db, "users"), where("name", "==", name), where("pin", "==", pin));
-        const snap = await getDocs(q);
-        if (snap.empty) {
-            alert("登入失敗：名稱或PIN錯誤");
-        } else {
-            currentUser = name;
-            document.getElementById("userHello").innerText = "你好, " + name;
-            // 抓取所有排班與紀錄
-            const res = await fetch(WEB_APP_URL + "?name=" + encodeURIComponent(name));
-            cachedData = await res.json();
-            renderUI();
-            showBox('menuBox');
-        }
-    } catch (e) {
-        console.error(e);
-        alert("登入發生錯誤，請檢查網絡");
-    }
-    loading.style.display = "none";
-};
 </script>
 </body>
 </html>
