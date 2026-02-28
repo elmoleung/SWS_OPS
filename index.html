@@ -462,95 +462,100 @@ window.showWeeklyDetail = (weekRange, year) => {
 window.chooseRecordLoc = (l) => {
     window.curRecordLoc = l;
     
-    // 1. 搵出呢個地點所有出現過嘅 年月
+    // 1. 搵出所有出現過嘅 年月 (2026年2月, 2026年1月...)
     const ymSet = [...new Set((cachedData.records || []).filter(r => r[2] === l).map(r => {
         const p = parseDateStr(r[0]); 
         return p[0] + "年" + p[1] + "月";
     }))].sort().reverse();
 
-    // 2. 產生「下拉式」嘅標題
-    let h = ymSet.map(ym => `
-        <div class="date-group" style="margin-bottom:10px;">
-            <div class="date-header" onclick="window.chooseRecordYM('${ym}')" style="background:#f8f8f8; border:1px solid #ddd; padding:12px; display:flex; justify-content:space-between; cursor:pointer;">
-                <span>📂 <b>${ym}</b></span><span>▼</span>
+    // 2. 產生「下拉資料夾」標題
+    let h = ymSet.map(ym => {
+        const safeId = ym.replace("年","-").replace("月","");
+        return `
+            <div class="date-group" style="margin-bottom:12px; border:1px solid #ddd; border-radius:8px; overflow:hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div class="date-header" onclick="window.chooseRecordYM('${ym}', '${safeId}')" style="background:#f9f9f9; padding:15px; display:flex; justify-content:space-between; cursor:pointer; font-weight:bold; align-items:center;">
+                    <span>📂 ${ym}</span>
+                    <span id="arrow-${safeId}" style="transition: transform 0.3s;">▼</span>
+                </div>
+                <div id="box-${safeId}" style="display:none; background:#fff; border-top:1px solid #eee;">
+                    <p style="text-align:center; padding:15px; color:#999;">載入中...</p>
+                </div>
             </div>
-            <div id="content-${ym}" class="date-content" style="display:none; background:#fff;">
-                <p style="text-align:center; padding:15px; color:#999;">載入紀錄中...</p>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
-    // 3. 塞入原本顯示年月嘅位置 (請檢查你原本 HTML 個 ID 係咪 listRecordYM)
-    document.getElementById("listRecordYM").innerHTML = h || "<p style='text-align:center; padding:20px;'>暫無紀錄</p>";
-    window.showBox('recordMonthBox');
+    // 3. 渲染到選單容器 (listRecordYM)
+    const container = document.getElementById("listRecordYM");
+    if (container) {
+        container.innerHTML = h || "<p style='text-align:center; padding:20px;'>此地點暫無紀錄</p>";
+        window.showBox('recordMonthBox');
+    }
 };
 
-window.chooseRecordYM = (ym) => {
-    const contentEl = document.getElementById(`content-${ym}`);
+window.chooseRecordYM = (ym, safeId) => {
+    const contentEl = document.getElementById("box-" + safeId);
+    const arrowEl = document.getElementById("arrow-" + safeId);
     if (!contentEl) return;
     
-    // 開合效果
+    // 開合切換 (Accordion 效果)
     if (contentEl.style.display === 'block') {
         contentEl.style.display = 'none';
+        if (arrowEl) arrowEl.style.transform = "rotate(0deg)";
         return;
+    } else {
+        contentEl.style.display = 'block';
+        if (arrowEl) arrowEl.style.transform = "rotate(180deg)";
     }
-    
+
     const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
+    // 篩選該地點及該月紀錄，並按日期由新到舊排 (31號喺頂，1號喺底)
     const logs = (cachedData.records || []).filter(r => {
         const p = parseDateStr(r[0]); 
-        return r[2] === window.curRecordLoc && p[0] === y && p[1] === String(m);
+        return r[2] === window.curRecordLoc && p[0] === y && String(p[1]) === String(m);
     });
-
-    logs.sort((a, b) => {
-        const pa = parseDateStr(a[0]), pb = parseDateStr(b[0]);
-        return parseInt(pb[2]) - parseInt(pa[2]);
-    });
+    logs.sort((a, b) => parseInt(parseDateStr(b[0])[2]) - parseInt(parseDateStr(a[0])[2]));
 
     let h = "";
     let lastDate = "";
 
     logs.forEach(log => {
         const p = parseDateStr(log[0]);
-        const d = new Date(p[0], p[1]-1, p[2]);
-        const dayName = dayNames[d.getDay()];
         const displayDate = `${String(p[2]).padStart(2, '0')}-${String(p[1]).padStart(2, '0')}-${p[0]}`;
-        const dateHeader = `📅 ${displayDate} (${dayName})`;
+        const d = new Date(p[0], p[1]-1, p[2]);
+        const dateHeader = `📅 ${displayDate} (${dayNames[d.getDay()]})`;
 
+        // 插入日期大標題 (每一日只出一次)
         if (displayDate !== lastDate) {
-            h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid var(--blue); margin-top:15px;">${dateHeader}</div>`;
+            h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid #007bff; margin-top:15px; text-align:left;">${dateHeader}</div>`;
             lastDate = displayDate;
         }
 
-        // 跨 Sheet 對位：搵返 Schedules 嘅原定時間
+        // 跨 Sheet 對位：根據「Event [員工名]」搵返 Schedules 嘅原定時間
         const sched = (cachedData.allSchedules || []).find(s => {
             const sp = parseDateStr(s[0]);
-            // 根據你提供的 log[5] (即係 Elmo [員工名]) 嚟對位
             const uKey = (s[4] || "") + " [" + (s[1] || "") + "]"; 
             return sp[0] === p[0] && sp[1] === p[1] && sp[2] === p[2] && uKey === log[5];
         });
-
         const schedTime = sched ? sched[1] : "更表時間未提供";
 
-        h += `<div class="record-item" style="padding:12px 15px; border-bottom:1px solid #eee; background:#fff;">
+        // 三層排版：第一層(標籤+更表時間), 第二層(實時時間), 第三層(Event)
+        h += `<div style="padding:12px 15px; border-bottom:1px solid #eee; text-align:left;">
             <div style="margin-bottom:6px;">
                 <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
                 <b style="font-size:1.05em; color:#222;">${displayDate} ${schedTime}</b>
             </div>
-            
-            <div style="color:var(--blue); font-size:0.95em; margin-bottom:4px; font-weight:500;">
+            <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
                 打卡時間✅ ${log[1]}
             </div>
-            
             <div style="color:#666; font-size:0.9em; padding-left:2px;">
                 ${log[4]}
             </div>
         </div>`;
     });
 
-    contentEl.innerHTML = h || "<p style='padding:20px; text-align:center; color:#999;'>無紀錄</p>";
-    contentEl.style.display = 'block';
+    contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
 };
 
 window.submitSupport = () => {
