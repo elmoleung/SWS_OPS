@@ -471,11 +471,43 @@ window.chooseRecordLoc = (l) => {
 
 window.chooseRecordYM = (ym) => {
     const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
-    const logs = cachedData.records.filter(r => {
-        const p = parseDateStr(r[0]); return r[2] === curRecordLoc && p[0] === y && p[1] === m;
+    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+    const logs = (cachedData.records || []).filter(r => {
+        const p = parseDateStr(r[0]); 
+        return r[2] === curRecordLoc && p[0] === y && p[1] === m;
     });
-    let h = logs.map(log => `<div class="record-item"><span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> <b>${log[0]}</b> ${log[4]}</div>`).join('');
+
+    // 排序：將紀錄由新到舊排 (由 31號排返去 1號)
+    logs.sort((a, b) => {
+        const pa = parseDateStr(a[0]), pb = parseDateStr(b[0]);
+        return parseInt(pb[2]) - parseInt(pa[2]);
+    });
+
+    let h = logs.map(log => {
+        // 1. 解析日期
+        const p = parseDateStr(log[0]); // [年, 月, 日]
+        const d = new Date(p[0], p[1]-1, p[2]);
+        const dayName = dayNames[d.getDay()];
+
+        // 2. 補零處理 (例如 2 -> 02)
+        const dd = String(p[2]).padStart(2, '0');
+        const mm = String(p[1]).padStart(2, '0');
+        
+        // 3. 砌出顯示格式: 28-02-2026 (SAT)
+        const dateWithDay = `${dd}-${mm}-${p[0]} (${dayName})`;
+
+        return `<div class="record-item">
+            <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
+            <b>${dateWithDay}</b> ${log[4]} 
+            <div style="font-size:0.85em; color:#666; margin-top:4px; margin-left:55px;">
+                ${log[1]} | ${log[5]}
+            </div>
+        </div>`;
+    }).join('');
+
     document.getElementById("listRecordFinal").innerHTML = h || "無紀錄";
+    document.getElementById("titleRecordFinal").innerText = ym + " - 紀錄"; // 加返個標題
     window.showBox('recordFinalBox');
 };
 
