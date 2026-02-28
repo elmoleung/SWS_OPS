@@ -250,7 +250,7 @@ window.renderUI = () => {
         if (dayScheds.length === 0) h += `<p style="color:#999; padding:15px; text-align:center;">無安排更次</p>`;
         else {
             dayScheds.forEach(s => {
-                const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
+                const uKey = (s[3] || "") + " - " + (s[4] || "") + " [" + (s[1] || "") + "]";
                 // 紀錄對位都要同時兼容兩個版本
                 const hasOut = (cachedData.records || []).some(r => 
                     (r[0] === group.info.version1 || r[0] === group.info.version2) && 
@@ -270,7 +270,7 @@ window.renderUI = () => {
 
 window.selectJobFromList = (s) => {
     selectedSchedule = s;
-    const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
+    const uKey = (s[3] || "") + " - " + (s[4] || "") + " [" + (s[1] || "") + "]";
     const hasIn = (cachedData.records || []).some(r => String(r[0]).trim() === String(s[0]).trim() && r[5] === uKey && r[3] === "翻工");
     const hasOut = (cachedData.records || []).some(r => String(r[0]).trim() === String(s[0]).trim() && r[5] === uKey && r[3] === "收工");
     
@@ -309,7 +309,7 @@ window.handleCapture = (input) => {
             canvas.height = img.height * (maxW / img.width);
             canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
             
-            const detail = (selectedSchedule[4] || "") + " [" + (selectedSchedule[1] || "") + "]";
+            const detail = (selectedSchedule[3] || "") + " - " + (selectedSchedule[4] || "") + " [" + (selectedSchedule[1] || "") + "]";
             // 喺 body: JSON.stringify(...) 之後，確保個 .then 係接得住嘅
             fetch(WEB_APP_URL, {
                 method: "POST",
