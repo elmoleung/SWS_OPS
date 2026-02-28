@@ -51,7 +51,8 @@
     <div class="menu-btn" onclick="startSchedFlow()"><div>📅 <b>我想睇更！</b></div><span>❯</span></div>
     <div class="menu-btn" onclick="startRecordFlow()"><div>📜 <b>打卡紀錄</b></div><span>❯</span></div>
     <div class="menu-btn" onclick="showBox('supportBox')"><div>🛠️ <b>技術支援</b></div><span>❯</span></div>
-    <button class="secondary" onclick="location.reload()" style="margin-top:20px;">登出系統</button>
+    <button id="refreshDataBtn" class="secondary" onclick="doRefreshData()" style="margin-top:20px; background:#e1f5fe; color:#01579b;">🔄 更新最新資料</button>
+    <button class="secondary" onclick="doLogout()" style="margin-top:10px;">登出系統</button>
 </div>
 
 <div class="card" id="clockInBox">
@@ -196,6 +197,8 @@ window.doLogin = async () => {
             const response = await fetch(`${WEB_APP_URL}?action=refresh&name=${encodeURIComponent(n)}`);
             cachedData = await response.json();
             currentUser = n;
+            localStorage.setItem("sws_user", n);
+            localStorage.setItem("sws_pin", p);
             window.renderUI();
             document.getElementById("userHello").innerText = "你好，" + currentUser;
             window.showBox('menuBox');
@@ -206,7 +209,41 @@ window.doLogin = async () => {
     btn.innerText = "登入系統"; btn.disabled = false;
     loading.style.display = "none";
 };
+window.doRefreshData = async () => {
+    const btn = document.getElementById("refreshDataBtn");
+    const loading = document.getElementById("loading");
+    
+    // 1. 顯示 Loading 狀態
+    btn.innerText = "更新中...";
+    btn.disabled = true;
+    loading.style.display = "flex";
 
+    try {
+        // 2. 向 GAS 重新攞一次資料 (用返而家個 currentUser)
+        const response = await fetch(`${WEB_APP_URL}?action=refresh&name=${encodeURIComponent(currentUser)}`);
+        const newData = await response.json();
+        
+        // 3. 更新暫存變數並重新畫 UI
+        cachedData = newData;
+        window.renderUI(); 
+        
+        alert("✅ 資料已同步至最新狀態！");
+    } catch(e) {
+        alert("❌ 更新失敗: " + e.message);
+    } finally {
+        // 4. 恢復按鈕狀態
+        btn.innerText = "🔄 更新最新資料";
+        btn.disabled = false;
+        loading.style.display = "none";
+    }
+};
+window.doLogout = () => {
+    // 呢兩行係將頭先儲存咗嘅名同 PIN 抹走
+    localStorage.removeItem("sws_user");
+    localStorage.removeItem("sws_pin");
+    // 然後重新整理網頁，咁樣就會變返一個「乾淨」嘅登入畫面
+    location.reload();
+};
 window.renderUI = () => {
     let h = "";
     const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
@@ -579,6 +616,15 @@ window.submitSupport = () => {
     fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "support", name: currentUser, message: msg }) })
     .then(() => { alert("收到你🫡"); window.showBox('menuBox'); });
 };
+// 自動檢查：令 Refresh 或重新開 App 唔使再打名
+const savedName = localStorage.getItem("sws_user");
+const savedPin = localStorage.getItem("sws_pin");
+
+if (savedName && savedPin) {
+    document.getElementById("name").value = savedName;
+    document.getElementById("pin").value = savedPin;
+    window.doLogin(); // 自動執行登入流程
+}
 </script>
 </body>
 </html>
