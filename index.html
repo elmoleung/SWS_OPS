@@ -462,15 +462,16 @@ window.showWeeklyDetail = (weekRange, year) => {
 window.chooseRecordLoc = (l) => {
     window.curRecordLoc = l;
     
-    // 1. 搵出所有年份月份，例如 "2026年2月"
-    const ymSet = [...new Set((cachedData.records || []).filter(r => r[2] === l).map(r => {
+    // 1. 搵出所有年月 (2026年2月, 2026年1月...)
+    const records = cachedData.records || [];
+    const ymSet = [...new Set(records.filter(r => r[2] === l).map(r => {
         const p = parseDateStr(r[0]); 
         return p[0] + "年" + p[1] + "月";
     }))].sort().reverse();
 
-    // 2. 產生「下拉資料夾」式嘅標題
+    // 2. 產生「下拉資料夾」標題
     let h = ymSet.map(ym => {
-        const safeId = ym.replace("年","-").replace("月","");
+        const safeId = ym.replace(/[年月]/g, "-");
         return `
             <div class="date-group" style="margin-bottom:12px; border:1px solid #ddd; border-radius:8px; overflow:hidden;">
                 <div class="date-header" onclick="window.chooseRecordYM('${ym}', '${safeId}')" style="background:#f9f9f9; padding:15px; display:flex; justify-content:space-between; cursor:pointer; font-weight:bold; align-items:center;">
@@ -478,13 +479,13 @@ window.chooseRecordLoc = (l) => {
                     <span id="arrow-${safeId}">▼</span>
                 </div>
                 <div id="box-${safeId}" style="display:none; background:#fff; border-top:1px solid #eee;">
-                    <p style="text-align:center; padding:15px; color:#999;">載入中...</p>
+                    <p style="text-align:center; padding:15px; color:#999;">載入紀錄中...</p>
                 </div>
             </div>
         `;
     }).join('');
 
-    // 3. 塞入原本顯示月份嘅位置 (listRecordYM)
+    // 3. 搵返 listRecordYM 呢個容器
     const container = document.getElementById("listRecordYM");
     if (container) {
         container.innerHTML = h || "<p style='text-align:center; padding:20px;'>此地點暫無紀錄</p>";
@@ -494,23 +495,18 @@ window.chooseRecordLoc = (l) => {
 
 window.chooseRecordYM = (ym, safeId) => {
     const contentEl = document.getElementById("box-" + safeId);
-    const arrowEl = document.getElementById("arrow-" + safeId);
     if (!contentEl) return;
     
-    // 原地開合邏輯 (Accordion)
+    // 原地開合切換 (Accordion)
     if (contentEl.style.display === 'block') {
         contentEl.style.display = 'none';
-        if (arrowEl) arrowEl.innerText = "▼";
         return;
-    } else {
-        contentEl.style.display = 'block';
-        if (arrowEl) arrowEl.innerText = "▲";
     }
 
     const [y, m] = [ym.split("年")[0], ym.split("年")[1].replace("月","")];
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-    // 4. 篩選紀錄：最新日期在頂 (31號 -> 1號)
+    // 4. 篩選紀錄：按日期由新到舊排
     const logs = (cachedData.records || []).filter(r => {
         const p = parseDateStr(r[0]); 
         return r[2] === window.curRecordLoc && p[0] === y && String(p[1]) === String(m);
@@ -523,16 +519,16 @@ window.chooseRecordYM = (ym, safeId) => {
     logs.forEach(log => {
         const p = parseDateStr(log[0]);
         const displayDate = `${String(p[2]).padStart(2, '0')}-${String(p[1]).padStart(2, '0')}-${p[0]}`;
-        const d = new Date(p[0], p[1]-1, p[2]);
+        const d = new Date(p[0], parseInt(p[1])-1, parseInt(p[2]));
         const dateHeader = `📅 ${displayDate} (${dayNames[d.getDay()]})`;
 
-        // 插入日期大標題 (每一日只出現一次)
+        // 插入日期大標題 (每一日只出一次)
         if (displayDate !== lastDate) {
             h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid #007bff; margin-top:15px; text-align:left;">${dateHeader}</div>`;
             lastDate = displayDate;
         }
 
-        // 5. 跨 Sheet 對位：搵返 Schedules 嘅原定時間
+        // 5. 跨 Sheet 對位 (搵返 Schedules 嘅時間)
         const sched = (cachedData.allSchedules || []).find(s => {
             const sp = parseDateStr(s[0]);
             const uKey = (s[4] || "") + " [" + (s[1] || "") + "]"; 
@@ -540,24 +536,23 @@ window.chooseRecordYM = (ym, safeId) => {
         });
         const schedTime = sched ? sched[1] : "更表時間未提供";
 
-        // 6. 三層排版內容
+        // 6. 三層排版 (log[1]=實時時間, log[4]=Event名稱)
         h += `<div style="padding:12px 15px; border-bottom:1px solid #eee; text-align:left;">
             <div style="margin-bottom:6px;">
                 <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
                 <b style="font-size:1.05em; color:#222;">${displayDate} ${schedTime}</b>
             </div>
-            
             <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
                 打卡時間✅ ${log[1]}
             </div>
-            
-            <div style="color:#666; font-size:0.9em;">
+            <div style="color:#666; font-size:0.9em; padding-left:2px;">
                 ${log[4]}
             </div>
         </div>`;
     });
 
     contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
+    contentEl.style.display = 'block';
 };
 
 window.submitSupport = () => {
