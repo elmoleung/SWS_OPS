@@ -616,13 +616,15 @@ window.chooseRecordYM = (ym, safeId) => {
         const d = new Date(p[0], parseInt(p[1])-1, parseInt(p[2]));
         const dateHeader = `📅 ${displayDate} (${dayNames[d.getDay()]})`;
 
-        // 插入日期分隔大標題
         if (displayDate !== lastDate) {
             h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid #007bff; margin-top:15px; text-align:left;">${dateHeader}</div>`;
             lastDate = displayDate;
         }
 
-        // 3. 畫面排版 (確保三層清楚)
+        // --- 核心修正：用 Regular Expression 搣走 [XX:XX - XX:XX] 呢類時間字眼 ---
+        let cleanEventName = (log[5] || "").replace(/\[\d{1,2}:\d{2}.*?\]/g, "").trim();
+        // ------------------------------------------------------------------
+
         h += `
         <div style="padding:15px; border-bottom:1px solid #eee; text-align:left; background:#fff;">
             <div style="margin-bottom:8px; display:flex; align-items:center; gap:10px;">
@@ -635,11 +637,10 @@ window.chooseRecordYM = (ym, safeId) => {
             </div>
             
             <div style="color:#666; font-size:0.9em; padding-left:2px;">
-                🔖 事件：${log[5] || "無備註"}
+                🔖 事件：${cleanEventName || "無備註"}
             </div>
         </div>`;
     });
-
     contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
     contentEl.style.display = 'block';
     document.getElementById("arrow-" + safeId).innerText = "▲";
