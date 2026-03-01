@@ -314,12 +314,17 @@ window.renderUI = () => {
             dayScheds.sort((a, b) => a[1].localeCompare(b[1]));
             
             dayScheds.forEach(s => {
-                const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
-                // 紀錄對位都要同時兼容兩個版本
-                const hasOut = (cachedData.records || []).some(r => 
-                    (r[0] === group.info.version1 || r[0] === group.info.version2) && 
-                    r[5] === uKey && r[3] === "收工"
-                );
+                // 統一用 Event 名稱 (s[4]) 做比對 Key，唔好加時間入去
+                const uKey = (s[4] || "").trim(); 
+                
+                // 檢查係咪已經有「收工」紀錄
+                const hasOut = (cachedData.records || []).some(r => {
+                    const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
+                    const dateMatch = `${rp[0]}-${rp[1]}-${rp[2]}` === `${sp[0]}-${sp[1]}-${sp[2]}`;
+                    const keyMatch = (r[5] || "").trim() === uKey;
+                    return dateMatch && keyMatch && r[3] === "收工";
+                });
+
                 const sParam = JSON.stringify(s).replace(/"/g, '&quot;');
                 h += `<div class="menu-btn" style="${hasOut ? 'opacity:0.4; pointer-events:none;' : ''}" onclick='window.selectJobFromList(${sParam})'>
                     <div><b>${s[3]}</b><br><small>${s[1]} ${s[4]}</small></div>
@@ -334,12 +339,29 @@ window.renderUI = () => {
 
 window.selectJobFromList = (s) => {
     selectedSchedule = s;
-    const uKey = (s[4] || "") + " [" + (s[1] || "") + "]";
-    // 統一將兩邊日期都經 parseDateStr 轉成 YYYY-MM-DD 再比對
+    const uKey = (s[4] || "").trim();
+    const sp = parseDateStr(s[0]);
+    const sDateStr = `${sp[0]}-${sp[1]}-${sp[2]}`;
+
+    // 檢查翻工同收工狀態
     const hasIn = (cachedData.records || []).some(r => {
-    const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
-    return `${rp[0]}-${rp[1]}-${rp[2]}` === `${sp[0]}-${sp[1]}-${sp[2]}` && r[5] === uKey && r[3] === "翻工";
-});
+        const rp = parseDateStr(r[0]);
+        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && (r[5] || "").trim() === uKey && r[3] === "翻工";
+    });
+
+    const hasOut = (cachedData.records || []).some(r => {
+        const rp = parseDateStr(r[0]);
+        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && (r[5] || "").trim() === uKey && r[3] === "收工";
+    });
+
+    document.getElementById("selectedJobTitle").innerText = s[3];
+    const bIn = document.getElementById("btnIn");
+    const bOut = document.getElementById("btnOut");
+    
+    bIn.disabled = hasIn; bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; bIn.style.opacity = hasIn ? "0.5" : "1";
+    bOut.disabled = hasOut; bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; bOut.style.opacity = hasOut ? "0.5" : "1";
+    window.showBox('typeBox');
+};
 
 const hasOut = (cachedData.records || []).some(r => {
     const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
