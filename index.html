@@ -295,18 +295,13 @@ window.renderUI = () => {
     ];
 
     dateGroups.forEach(group => {
-        // 核心改動：用更嚴謹嘅方式比對日期
-const dayScheds = (cachedData.allSchedules || []).filter(s => {
-    const sDateParts = parseDateStr(s[0]);
-    // 將 Sheet 傳嚟嘅日期轉做 YYYY-MM-DD 格式
-    const sDateFormatted = `${sDateParts[0]}-${sDateParts[1].padStart(2,'0')}-${sDateParts[2].padStart(2,'0')}`;
-    
-    // 比對今日/昨日/翌日嘅格式 (同樣轉做 YYYY-MM-DD)
-    const gParts = group.info.version1.split('-'); // 假設 version1 係 DD-MM-YYYY
-    const gDateFormatted = `${gParts[2]}-${gParts[1]}-${gParts[0]}`;
-    
-    return sDateFormatted === gDateFormatted;
-});
+        const dayScheds = (cachedData.allSchedules || []).filter(s => {
+            const sDateParts = parseDateStr(s[0]);
+            const sDateFormatted = `${sDateParts[0]}-${sDateParts[1].padStart(2,'0')}-${sDateParts[2].padStart(2,'0')}`;
+            const gParts = group.info.version1.split('-'); 
+            const gDateFormatted = `${gParts[2]}-${gParts[1]}-${gParts[0]}`;
+            return sDateFormatted === gDateFormatted;
+        });
         
         h += `<div class="date-group">
             <div class="date-header" onclick="this.nextElementSibling.classList.toggle('open')">
@@ -408,16 +403,16 @@ window.handleCapture = (input) => {
                     detail               
                 ]);
                 
-                window.renderUI();
+               window.renderUI();
                 window.showBox('successBox');
                 loading.style.display = "none";
             }).catch(err => {
                 alert("傳輸失敗：" + err);
                 loading.style.display = "none";
             });
-        }; // 呢個係 img.onload 嘅結尾
+        }; 
         img.src = e.target.result;
-    }; // 呢個係 reader.onload 嘅結尾
+    }; 
     reader.readAsDataURL(input.files[0]);
 };
 // 補回缺失的導航功能
@@ -642,7 +637,7 @@ window.chooseRecordYM = (ym, safeId) => {
         ${log[5]}
     </div>
 </div>`;
-
+    });
     contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
     contentEl.style.display = 'block';
 };
