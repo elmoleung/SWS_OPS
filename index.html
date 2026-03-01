@@ -344,45 +344,35 @@ window.selectJobFromList = (s) => {
     const sDateStr = `${sp[0]}-${sp[1]}-${sp[2]}`;
 
     // 檢查翻工同收工狀態
-    const hasIn = (cachedData.records || []).some(r => {
+    const records = cachedData.records || [];
+    const hasIn = records.some(r => {
         const rp = parseDateStr(r[0]);
-        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && (r[5] || "").trim() === uKey && r[3] === "翻工";
+        const rKey = (r[5] || "").trim();
+        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && rKey === uKey && r[3] === "翻工";
     });
 
-    const hasOut = (cachedData.records || []).some(r => {
+    const hasOut = records.some(r => {
         const rp = parseDateStr(r[0]);
-        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && (r[5] || "").trim() === uKey && r[3] === "收工";
+        const rKey = (r[5] || "").trim();
+        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && rKey === uKey && r[3] === "收工";
     });
 
     document.getElementById("selectedJobTitle").innerText = s[3];
     const bIn = document.getElementById("btnIn");
     const bOut = document.getElementById("btnOut");
     
-    bIn.disabled = hasIn; bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; bIn.style.opacity = hasIn ? "0.5" : "1";
-    bOut.disabled = hasOut; bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; bOut.style.opacity = hasOut ? "0.5" : "1";
-    window.showBox('typeBox');
-};
-
-const hasOut = (cachedData.records || []).some(r => {
-    const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
-    return `${rp[0]}-${rp[1]}-${rp[2]}` === `${sp[0]}-${sp[1]}-${sp[2]}` && r[5] === uKey && r[3] === "收工";
-});
-    document.getElementById("selectedJobTitle").innerText = s[3];
-    const bIn = document.getElementById("btnIn");
-    const bOut = document.getElementById("btnOut");
+    bIn.disabled = hasIn; 
+    bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; 
+    bIn.style.opacity = hasIn ? "0.5" : "1";
     
-    bIn.disabled = hasIn; bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; bIn.style.opacity = hasIn ? "0.5" : "1";
-    bOut.disabled = hasOut; bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; bOut.style.opacity = hasOut ? "0.5" : "1";
+    bOut.disabled = hasOut; 
+    bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; 
+    bOut.style.opacity = hasOut ? "0.5" : "1";
+    
     window.showBox('typeBox');
 };
 
 window.triggerCamera = (t) => {
-    const todayRecs = (cachedData.records || []).filter(r => getHKTodayFormats().includes(String(r[0]).trim()));
-    const lastAction = todayRecs.length > 0 ? todayRecs[todayRecs.length - 1][3] : null;
-
-    if (t === "收工" && !lastAction) return alert("⚠️ 錯誤：今日仲未有「翻工」紀錄！");
-    if (lastAction === t) return alert(`⚠️ 錯誤：你最後一筆已經係「${lastAction}」！`);
-
     clockType = t;
     document.getElementById("cameraInput").click();
 };
@@ -402,41 +392,36 @@ window.handleCapture = (input) => {
             canvas.height = img.height * (maxW / img.width);
             canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
             
-           const detail = (selectedSchedule[4] || ""); // 淨係攞 Event 名稱
-            // 喺 body: JSON.stringify(...) 之後，確保個 .then 係接得住嘅
+            const detail = (selectedSchedule[4] || "").trim(); 
+            
             fetch(WEB_APP_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "save", name: currentUser, location: selectedSchedule[3], type: clockType, detail: detail, image: canvas.toDataURL("image/jpeg", 0.4) })
+                body: JSON.stringify({ 
+                    action: "save", 
+                    name: currentUser, 
+                    location: selectedSchedule[3], 
+                    type: clockType, 
+                    detail: detail, 
+                    image: canvas.toDataURL("image/jpeg", 0.4) 
+                })
             })
             .then(r => r.json()).then(res => {
-                // 1. 更新成功畫面
                 document.getElementById("successType").innerText = clockType + "成功";
                 document.getElementById("successTime").innerText = res.time;
                 document.getElementById("successDetail").innerText = selectedSchedule[3];
                 
-                .then(r => r.json()).then(res => {
-                document.getElementById("successType").innerText = clockType + "成功";
-                document.getElementById("successTime").innerText = res.time;
-                document.getElementById("successDetail").innerText = selectedSchedule[3];
-                
-                // 修正資料順序：[日期, 姓名, 地點, 類型, 實時時間, Event名稱]
-                const cleanDetail = (selectedSchedule[4] || "").trim();
+                // 確保 records 存在並更新
+                if (!cachedData.records) cachedData.records = [];
                 cachedData.records.push([
-                    selectedSchedule[0],  // 欄位 0: 日期
-                    currentUser,          // 欄位 1: 姓名
-                    selectedSchedule[3],  // 欄位 2: 地點
-                    clockType,            // 欄位 3: 類型
-                    res.time,             // 欄位 4: 實時時間
-                    cleanDetail           // 欄位 5: Event名稱
+                    selectedSchedule[0], 
+                    currentUser,
+                    selectedSchedule[3], 
+                    clockType,  
+                    res.time,
+                    detail
                 ]);
                 
-                window.renderUI(); // 呢句最重要，即時鎖掣
-                window.showBox('successBox');
-                loading.style.display = "none";
-            })            
-                ]);
-                
-               window.renderUI();
+                window.renderUI(); // 呢句最重要：打完卡即時變灰鎖掣
                 window.showBox('successBox');
                 loading.style.display = "none";
             }).catch(err => {
@@ -448,7 +433,7 @@ window.handleCapture = (input) => {
     }; 
     reader.readAsDataURL(input.files[0]);
 };
-// 補回缺失的導航功能
+
 window.startSchedFlow = () => {
     const locs = [...new Set(cachedData.allSchedules.map(s => s[3]))];
     let h = "";
@@ -458,7 +443,7 @@ window.startSchedFlow = () => {
 };
 
 window.startRecordFlow = () => {
-    const locs = [...new Set(cachedData.records.map(r => r[2]))];
+    const locs = [...new Set((cachedData.records || []).map(r => r[2]))];
     let h = "";
     locs.forEach(l => h += `<div class="menu-btn" onclick="chooseRecordLoc('${l}')"><b>${l}</b><span>❯</span></div>`);
     document.getElementById("listRecordLoc").innerHTML = h;
