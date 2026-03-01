@@ -272,19 +272,14 @@ window.renderUI = () => {
     const hkt = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Hong_Kong"}));
     const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-    // 呢個 Function 專門負責整出「補零」同「唔補零」兩個版本，用嚟對位同顯示
     const getDateInfo = (d) => {
         const dd = String(d.getDate()).padStart(2, '0');
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const y = d.getFullYear();
-        const d_no_zero = d.getDate();
-        const m_no_zero = d.getMonth() + 1;
         const dayName = dayNames[d.getDay()];
-
         return {
-            display: `${dd}-${mm}-${y} (${dayName})`, // 顯示用: 28-02-2026 (SAT)
-            version1: `${dd}-${mm}-${y}`,             // 對位用(有0): 28-02-2026
-            version2: `${d_no_zero}-${m_no_zero}-${y}` // 對位用(無0): 28-2-2026
+            display: `${dd}-${mm}-${y} (${dayName})`,
+            version1: `${dd}-${mm}-${y}`
         };
     };
 
@@ -309,15 +304,15 @@ window.renderUI = () => {
             </div>
             <div class="date-content ${group.label === '今日' ? 'open' : ''}">`;
         
-        if (dayScheds.length === 0) h += `<p style="color:#999; padding:15px; text-align:center;">無安排更次</p>`;
-        else {
+        if (dayScheds.length === 0) {
+            h += `<p style="color:#999; padding:15px; text-align:center;">無安排更次</p>`;
+        } else {
             dayScheds.sort((a, b) => a[1].localeCompare(b[1]));
             
             dayScheds.forEach(s => {
-                // 統一用 Event 名稱 (s[4]) 做比對 Key，唔好加時間入去
                 const uKey = (s[4] || "").trim(); 
                 
-                // 檢查係咪已經有「收工」紀錄
+                // 必須要有呢段，否則系統唔知邊個更次「已完更」
                 const hasOut = (cachedData.records || []).some(r => {
                     const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
                     const dateMatch = `${rp[0]}-${rp[1]}-${rp[2]}` === `${sp[0]}-${sp[1]}-${sp[2]}`;
@@ -326,9 +321,17 @@ window.renderUI = () => {
                 });
 
                 const sParam = JSON.stringify(s).replace(/"/g, '&quot;');
-                h += `<div class="menu-btn" style="${hasOut ? 'opacity:0.4; pointer-events:none;' : ''}" onclick='window.selectJobFromList(${sParam})'>
-                    <div><b>${s[3]}</b><br><small>${s[1]} ${s[4]}</small></div>
-                    <span style="color:var(--blue);">${hasOut ? "✅ 已完更" : "❯"}</span>
+                h += `<div class="menu-btn" style="${hasOut ? 'opacity:0.6; pointer-events:none;' : ''}; display: flex; align-items: center; justify-content: space-between; padding: 15px;" onclick='window.selectJobFromList(${sParam})'>
+                    <div style="flex: 1; text-align: left;">
+                        <b style="font-size: 1.1em; display: block; margin-bottom: 4px; color: #1c1c1e;">${s[3]}</b>
+                        <small style="color: #666; font-size: 0.9em; display: block; margin-bottom: 2px;">⏰ ${s[1]}</small>
+                        <small style="color: #444; font-size: 0.9em; display: block;">🔖 ${s[4] || "一般勤務"}</small>
+                    </div>
+                    <div style="margin-left: 12px; white-space: nowrap;">
+                        <span style="color: ${hasOut ? '#34c759' : 'var(--blue)'}; font-weight: bold; font-size: 0.9em;">
+                            ${hasOut ? "✅ 已完更" : "❯"}
+                        </span>
+                    </div>
                 </div>`;
             });
         }
