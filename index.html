@@ -629,21 +629,19 @@ window.chooseRecordYM = (ym, safeId) => {
         const schedTime = sched ? sched[1] : "更表時間未提供";
 
         // --- 呢度係你要改嘅三層排版 ---
-        h += `<div style="padding:12px 15px; border-bottom:1px solid #eee; text-align:left; background:#fff;">
-            <div style="margin-bottom:6px;">
-                <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
-                <b style="font-size:1.05em; color:#222;">${displayDate} ${schedTime}</b>
-            </div>
-            
-            <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
-                打卡時間✅ ${log[4]}
-            </div>
-            
-            <div style="color:#666; font-size:0.9em; padding-left:2px;">
-                ${log[5]}
-            </div>
-        </div>`;
-    });
+       h += `<div style="padding:12px 15px; border-bottom:1px solid #eee; text-align:left; background:#fff;">
+    <div style="margin-bottom:6px;">
+        <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
+        <b style="font-size:1.05em; color:#222;">${displayDate}</b> </div>
+    
+    <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
+        打卡時間✅ ${log[4]}
+    </div>
+    
+    <div style="color:#666; font-size:0.9em; padding-left:2px;">
+        ${log[5]}
+    </div>
+</div>`;
 
     contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
     contentEl.style.display = 'block';
