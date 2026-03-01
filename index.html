@@ -153,25 +153,30 @@ let curRecordLoc = "";
 let selectedSchedule = null;
 let clockType = "";
 
-// 核心 Helper: 強制解析日期，避免 01-03 變成 1月3號
 function parseDateStr(s) {
     if (!s) return ["未知", "未知", "未知"];
     let str = String(s).trim();
-    
-    // 統一分隔符，將所有 / 換成 -
     let cleanStr = str.replace(/\//g, "-");
     let parts = cleanStr.split("-");
 
-    // 情況 A: DD-MM-YYYY (例如 01-03-2026) -> 長度係 3 且最後一格係年份
-    if (parts.length === 3 && parts[2].length === 4) {
-        return [parts[2], parseInt(parts[1]).toString(), parseInt(parts[0]).toString()];
-    }
-    
-    // 情況 B: YYYY-MM-DD (例如 2026-03-01) -> 第一格係年份
-    if (parts.length === 3 && parts[0].length === 4) {
-        return [parts[0], parseInt(parts[1]).toString(), parseInt(parts[2]).toString()];
+    let y, m, d;
+
+    if (parts.length === 3) {
+        // 情況 A: YYYY-MM-DD (例如 2026-03-01)
+        if (parts[0].length === 4) {
+            y = parts[0];
+            m = parseInt(parts[1]).toString();
+            d = parseInt(parts[2]).toString();
+        } 
+        // 情況 B: DD-MM-YYYY (例如 01-03-2026)
+        else if (parts[2].length === 4) {
+            y = parts[2];
+            m = parseInt(parts[1]).toString();
+            d = parseInt(parts[0]).toString();
+        }
     }
 
+    if (y && m && d) return [y, m, d];
     return ["未知", "未知", "未知"];
 }
 // 核心 Helper: 取得香港今日日期格式
