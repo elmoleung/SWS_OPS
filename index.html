@@ -156,27 +156,35 @@ let clockType = "";
 function parseDateStr(s) {
     if (!s) return ["未知", "未知", "未知"];
     let str = String(s).trim();
-    let cleanStr = str.replace(/\//g, "-");
+    
+    // 先處理常見分隔符，統一變做 "-"
+    let cleanStr = str.replace(/\//g, "-").replace(/\./g, "-");
+    
+    // 如果入面有空格（例如 01-03-2026 00:00:00），只攞前面日期部分
+    cleanStr = cleanStr.split(" ")[0];
+    
     let parts = cleanStr.split("-");
 
     let y, m, d;
 
     if (parts.length === 3) {
-        // 情況 A: YYYY-MM-DD (例如 2026-03-01)
-        if (parts[0].length === 4) {
+        // 情況 B (你選用的格式): DD-MM-YYYY (例如 01-03-2026)
+        // 判斷最後一截係咪年份 (4位數)
+        if (parts[2].length === 4) {
+            y = parts[2];
+            m = parseInt(parts[1]).toString(); // 03 變 3
+            d = parseInt(parts[0]).toString(); // 01 變 1
+        } 
+        // 情況 A (後備): YYYY-MM-DD (例如 2026-03-01)
+        else if (parts[0].length === 4) {
             y = parts[0];
             m = parseInt(parts[1]).toString();
             d = parseInt(parts[2]).toString();
-        } 
-        // 情況 B: DD-MM-YYYY (例如 01-03-2026)
-        else if (parts[2].length === 4) {
-            y = parts[2];
-            m = parseInt(parts[1]).toString();
-            d = parseInt(parts[0]).toString();
         }
     }
 
-    if (y && m && d) return [y, m, d];
+    // 最後檢查係咪真係攞到數字，攞唔到就回傳未知
+    if (y && !isNaN(m) && !isNaN(d)) return [y, m, d];
     return ["未知", "未知", "未知"];
 }
 // 核心 Helper: 取得香港今日日期格式
