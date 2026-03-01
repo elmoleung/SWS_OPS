@@ -400,9 +400,10 @@ window.handleCapture = (input) => {
                 // 2. 修正資料順序 (日期, 實時時間, 地點, 類型, Event, 對位Key)
                 cachedData.records.push([
                     selectedSchedule[0], 
-                    res.time,            
+                    currentUser,
                     selectedSchedule[3], 
-                    clockType,           
+                    clockType,  
+                    res.time,
                     selectedSchedule[4], 
                     detail               
                 ]);
@@ -635,11 +636,11 @@ window.chooseRecordYM = (ym, safeId) => {
             </div>
             
             <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
-                打卡時間✅ ${log[1]}
+                打卡時間✅ ${log[4]}
             </div>
             
             <div style="color:#666; font-size:0.9em; padding-left:2px;">
-                ${log[4]}
+                ${log[5]}
             </div>
         </div>`;
     });
