@@ -414,15 +414,26 @@ window.handleCapture = (input) => {
                 document.getElementById("successTime").innerText = res.time;
                 document.getElementById("successDetail").innerText = selectedSchedule[3];
                 
-                // 2. 修正資料順序 (日期, 實時時間, 地點, 類型, Event, 對位Key)
+                .then(r => r.json()).then(res => {
+                document.getElementById("successType").innerText = clockType + "成功";
+                document.getElementById("successTime").innerText = res.time;
+                document.getElementById("successDetail").innerText = selectedSchedule[3];
+                
+                // 修正資料順序：[日期, 姓名, 地點, 類型, 實時時間, Event名稱]
+                const cleanDetail = (selectedSchedule[4] || "").trim();
                 cachedData.records.push([
-                    selectedSchedule[0], 
-                    currentUser,
-                    selectedSchedule[3], 
-                    clockType,  
-                    res.time,
-                    selectedSchedule[4], 
-                    detail               
+                    selectedSchedule[0],  // 欄位 0: 日期
+                    currentUser,          // 欄位 1: 姓名
+                    selectedSchedule[3],  // 欄位 2: 地點
+                    clockType,            // 欄位 3: 類型
+                    res.time,             // 欄位 4: 實時時間
+                    cleanDetail           // 欄位 5: Event名稱
+                ]);
+                
+                window.renderUI(); // 呢句最重要，即時鎖掣
+                window.showBox('successBox');
+                loading.style.display = "none";
+            })            
                 ]);
                 
                window.renderUI();
@@ -643,23 +654,26 @@ window.chooseRecordYM = (ym, safeId) => {
             lastDate = displayDate;
         }
 
-        // --- 核心修正：用 Regular Expression 搣走 [XX:XX - XX:XX] 呢類時間字眼 ---
-        let cleanEventName = (log[5] || "").replace(/\[\d{1,2}:\d{2}.*?\]/g, "").trim();
-        // ------------------------------------------------------------------
+        // 搣走 Event 名入面嘅時間括號
+        let cleanEvent = (log[5] || "").replace(/[\[\(].*?\d{1,2}:\d{2}.*?[\]\)]/g, "").trim();
 
         h += `
         <div style="padding:15px; border-bottom:1px solid #eee; text-align:left; background:#fff;">
-            <div style="margin-bottom:8px; display:flex; align-items:center; gap:10px;">
+            <div style="margin-bottom:6px; display:flex; align-items:center; gap:8px;">
                 <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
-                <b style="font-size:1.1em; color:#222;">${log[4]}</b> 
+                <span style="color:#666; font-size:0.9em;">${displayDate}</span>
             </div>
             
-            <div style="color:#007bff; font-size:0.95em; margin-bottom:4px; font-weight:bold;">
-                📍 打卡地點：${log[2]}
+            <div style="font-size:1.15em; font-weight:bold; color:#222; margin-bottom:4px;">
+                打卡時間 ✅ ${log[4]}
             </div>
-            
-            <div style="color:#666; font-size:0.9em; padding-left:2px;">
-                🔖 事件：${cleanEventName || "無備註"}
+
+            <div style="color:#007bff; font-size:0.9em; margin-bottom:2px;">
+                📍 ${log[2]}
+            </div>
+
+            <div style="color:#444; font-size:0.95em; font-weight:500;">
+                🔖 ${cleanEvent || "一般勤務"}
             </div>
         </div>`;
     });
