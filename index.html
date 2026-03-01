@@ -629,42 +629,49 @@ window.chooseRecordYM = (ym, safeId) => {
     });
 
     let h = "";
+    
     let lastDate = "";
 
     logs.forEach(log => {
+        // 1. 【核心：跨表搵原裝更表資料】用 Event Key (log[5]) 去搵
+        const s = (cachedData.allSchedules || []).find(x => (x[4] || "").trim() === (log[5] || "").trim());
+        
+        // 2. 準備第一行要顯示嘅更表日期同時間 (s[0] 同 s[1])
+        const sDate = s ? s[0] : log[0]; // 搵唔到原裝就用紀錄日期
+        const sTime = s ? s[1] : "";     // 搵唔到原裝就留白
+        
         const p = parseDateStr(log[0]);
         const displayDate = `${String(p[2]).padStart(2, '0')}-${String(p[1]).padStart(2, '0')}-${p[0]}`;
-        const d = new Date(p[0], parseInt(p[1])-1, parseInt(p[2]));
-        const dateHeader = `📅 ${displayDate} (${dayNames[d.getDay()]})`;
 
+        // 呢段係維持原本「日期大標題」嘅邏輯，唔使改
         if (displayDate !== lastDate) {
-            h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid #007bff; margin-top:15px; text-align:left;">${dateHeader}</div>`;
+            const d = new Date(p[0], parseInt(p[1])-1, parseInt(p[2]));
+            h += `<div style="background:#f2f2f2; padding:8px 15px; font-weight:bold; color:#333; border-left:4px solid #007bff; margin-top:15px; text-align:left;">📅 ${displayDate} (${dayNames[d.getDay()]})</div>`;
             lastDate = displayDate;
         }
 
         // 搣走 Event 名入面嘅時間括號
         let cleanEvent = (log[5] || "").replace(/[\[\(].*?\d{1,2}:\d{2}.*?[\]\)]/g, "").trim();
 
+        // 3. 【三層排版輸出】
         h += `
         <div style="padding:15px; border-bottom:1px solid #eee; text-align:left; background:#fff;">
-            <div style="margin-bottom:6px; display:flex; align-items:center; gap:8px;">
-                <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}">${log[3]}</span> 
-                <span style="color:#666; font-size:0.9em;">${displayDate}</span>
+            <div style="margin-bottom:8px; display:flex; align-items:center;">
+                <span class="tag ${log[3]==='收工'?'tag-out':'tag-in'}" style="margin-right:8px; min-width:50px;">${log[3]}</span> 
+                <b style="font-size:1em; color:#1c1c1e;">${sDate} &nbsp; ${sTime}</b>
             </div>
             
-            <div style="font-size:1.15em; font-weight:bold; color:#222; margin-bottom:4px;">
-                打卡時間 ✅ ${log[4]}
+            <div style="font-size:1em; color:#1c1c1e; margin-bottom:6px;">
+                打卡成功 <span style="color:#34c759; font-weight:bold;">✅</span> 
+                <span style="color:#666; margin-left:4px;">${log[4]}</span>
             </div>
 
-            <div style="color:#007bff; font-size:0.9em; margin-bottom:2px;">
-                📍 ${log[2]}
-            </div>
-
-            <div style="color:#444; font-size:0.95em; font-weight:500;">
+            <div style="color:#444; font-size:0.9em; font-weight:500;">
                 🔖 ${cleanEvent || "一般勤務"}
             </div>
         </div>`;
     });
+    
     contentEl.innerHTML = h || "<p style='padding:20px; text-align:center;'>無紀錄</p>";
     contentEl.style.display = 'block';
     document.getElementById("arrow-" + safeId).innerText = "▲";
