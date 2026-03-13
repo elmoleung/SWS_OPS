@@ -226,7 +226,7 @@ window.doLogin = async () => {
             document.getElementById("userHello").innerText = "你好，" + currentUser;
             window.showBox('menuBox');
         } else {
-            alert("❌ 登入失敗");
+            alert("❌登入失敗，打錯名或者密碼啊！");
         }
     } catch(e) { alert("連線失敗: " + e.message); }
     btn.innerText = "登入系統"; btn.disabled = false;
