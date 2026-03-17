@@ -633,8 +633,14 @@ window.chooseRecordYM = (ym, safeId) => {
     let lastDate = "";
 
     logs.forEach(log => {
-        // 1. 【核心：跨表搵原裝更表資料】用 Event Key (log[5]) 去搵
-        const s = (cachedData.allSchedules || []).find(x => (x[4] || "").trim() === (log[5] || "").trim());
+        // 1. 【核心：跨表搵原裝更表資料】必須「日期 + 人名 + 地點 + 備註」全部對中
+const s = (cachedData.allSchedules || []).find(x => {
+    const sp = parseDateStr(x[0]), lp = parseDateStr(log[0]);
+    const dateMatch = `${sp[0]}-${sp[1]}-${sp[2]}` === `${lp[0]}-${lp[1]}-${lp[2]}`;
+    const keyMatch = (x[4] || "").trim() === (log[5] || "").trim();
+    const locMatch = x[3] === log[2];
+    return dateMatch && keyMatch && locMatch;
+});
         
         // 2. 準備第一行要顯示嘅更表日期同時間 (s[0] 同 s[1])
         const sDate = s ? s[0] : log[0]; // 搵唔到原裝就用紀錄日期
