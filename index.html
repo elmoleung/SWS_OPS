@@ -669,7 +669,7 @@ window.chooseRecordYM = (ym, safeId) => {
     logs.forEach(log => {
         // 1. 【核心：跨表搵原裝更表資料】必須「日期 + 人名 + 地點 + 備註」全部對中
 const s = (cachedData.allSchedules || []).find(x => {
-    const sp = parseDateStr(x[0]), lp = parseDateStr(log[0]);
+    const sp = parseDateStr(x[0]), lp = parseDateStr(log[7]);
     const dateMatch = `${sp[0]}-${sp[1]}-${sp[2]}` === `${lp[0]}-${lp[1]}-${lp[2]}`;
     const keyMatch = (x[4] || "").trim() === (log[5] || "").trim();
     const locMatch = x[3] === log[2];
