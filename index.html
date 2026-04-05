@@ -525,13 +525,19 @@ window.chooseYear = (yText) => {
         weeks[weekStr].push(s);
     });
 
-    // 將星期由新到舊排 (最近期嘅禮拜擺最頂)
+    // 將星期由新到舊排 (考慮埋月份，確保跨月都唔會錯)
     const sortedWeeks = Object.keys(weeks).sort((a, b) => {
-        const dateA = parseInt(a.split('/')[0]);
-        const dateB = parseInt(b.split('/')[0]);
-        return dateB - dateA;
+        // a 格式係 "30/3 - 5/4"
+        const partA = a.split(' - ')[0].split('/'); // ["30", "3"]
+        const partB = b.split(' - ')[0].split('/'); // ["6", "4"]
+        
+        // 假設年份係 targetYear，砌返個日期出嚟比對
+        const timeA = new Date(targetYear, parseInt(partA[1]) - 1, parseInt(partA[0])).getTime();
+        const timeB = new Date(targetYear, parseInt(partB[1]) - 1, parseInt(partB[0])).getTime();
+        
+        return timeB - timeA; // 由大到細 (最新喺頂)
     });
-
+    
     let h = "";
     sortedWeeks.forEach(w => {
         h += `<div class="menu-btn" onclick="showWeeklyDetail('${w}', '${targetYear}')"><b>${w}</b><span>❯</span></div>`;
