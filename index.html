@@ -448,24 +448,46 @@ window.handleCapture = (input) => {
                 document.getElementById("successTime").innerText = res.time;
                 document.getElementById("successDetail").innerText = selectedSchedule[3];
                 
-                // 確保 records 存在並更新
+                // 1. 確保暫存紀錄存在
                 if (!cachedData.records) cachedData.records = [];
+
+                // 2. 喺 App 暫存度即時砌返呢份更嘅「暗號」
+                const d = selectedSchedule[0].split("-");
+                const yyyymmdd = d[2] + d[1] + d[0];
+                const generatedID = yyyymmdd + "-" + selectedSchedule[2] + "-" + selectedSchedule[1];
+
+                // 3. 即時 Push 入 cachedData，記住 Index 8 要放 ID
                 cachedData.records.push([
-                    selectedSchedule[0], 
-                    currentUser,
-                    selectedSchedule[3], 
-                    clockType,  
-                    res.time,
-                    detail
+                    selectedSchedule[0], // Index 0: 日期
+                    currentUser,         // Index 1: 名
+                    selectedSchedule[3], // Index 2: 地點
+                    clockType,           // Index 3: 動作 (翻工/收工)
+                    res.time,            // Index 4: 時間
+                    detail,              // Index 5: 備註
+                    "",                  // Index 6
+                    "",                  // Index 7
+                    generatedID          // Index 8: 呢個就係鎖掣嘅「暗號」！
                 ]);
                 
-                window.renderUI(); // 呢句最重要：打完卡即時變灰鎖掣
+                // 4. 即刻執行一次渲染，將 UI 變灰
+                window.renderUI(); 
+                
+                // 5. 順便更新埋當前 typeBox 嘅掣（如果未關 box）
+                const bIn = document.getElementById("btnIn");
+                const bOut = document.getElementById("btnOut");
+                if (clockType === '翻工') {
+                    bIn.disabled = true;
+                    bIn.innerText = "✅ 已完成翻工";
+                    bIn.style.opacity = "0.5";
+                } else {
+                    bOut.disabled = true;
+                    bOut.innerText = "✅ 已完成收工";
+                    bOut.style.opacity = "0.5";
+                }
+
                 window.showBox('successBox');
                 loading.style.display = "none";
-            }).catch(err => {
-                alert("傳輸失敗：" + err);
-                loading.style.display = "none";
-            });
+            })
         }; 
         img.src = e.target.result;
     }; 
