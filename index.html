@@ -277,10 +277,7 @@ window.renderUI = () => {
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const y = d.getFullYear();
         const dayName = dayNames[d.getDay()];
-        return {
-            display: `${dd}-${mm}-${y} (${dayName})`,
-            version1: `${dd}-${mm}-${y}`
-        };
+        return { display: `${dd}-${mm}-${y} (${dayName})`, version1: `${dd}-${mm}-${y}` };
     };
 
     const dateGroups = [
@@ -310,15 +307,17 @@ window.renderUI = () => {
             dayScheds.sort((a, b) => a[1].localeCompare(b[1]));
             
             dayScheds.forEach(s => {
-                const uKey = (s[4] || "").trim(); 
+                // --- 【核心修正：模仿 RecordID 鎖掣】 ---
+                const d = s[0].split("-");
+                const yyyymmdd = d[2] + d[1] + d[0];
+                const generatedID = yyyymmdd + "-" + s[2] + "-" + s[1];
                 
-                // 必須要有呢段，否則系統唔知邊個更次「已完更」
+                // 喺紀錄庫搵有無對中 RecordID 嘅「收工」
                 const hasOut = (cachedData.records || []).some(r => {
-                    const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
-                    const dateMatch = `${rp[0]}-${rp[1]}-${rp[2]}` === `${sp[0]}-${sp[1]}-${sp[2]}`;
-                    const keyMatch = (r[5] || "").trim() === uKey;
-                    return dateMatch && keyMatch && r[3] === "收工";
+                    const rID = (r[8] || "").toString().trim();
+                    return rID === generatedID && r[3] === "收工";
                 });
+                // ------------------------------------
 
                 const sParam = JSON.stringify(s).replace(/"/g, '&quot;');
                 h += `<div class="menu-btn" style="${hasOut ? 'opacity:0.6; pointer-events:none;' : ''}; display: flex; align-items: center; justify-content: space-between; padding: 15px;" onclick='window.selectJobFromList(${sParam})'>
