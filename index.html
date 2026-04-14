@@ -343,32 +343,27 @@ window.renderUI = () => {
 window.selectJobFromList = (s) => {
     selectedSchedule = s;
     
-    // 1. 模仿你 Sheet 條公式砌 RecordID
-    // 假設 s[0] 格式係 "DD-MM-YYYY"
-    const dateParts = s[0].split("-");
-    const yyyymmdd = dateParts[2] + dateParts[1] + dateParts[0]; // 變做 20260414
-    
-    const name = s[2]; // 員工姓名
-    const shiftTime = s[1]; // 更表時間
-    
-    // 呢個就係 App 自己砌出嚟嘅「暗號」
-    const generatedID = `${yyyymmdd}-${name}-${shiftTime}`;
+    // 1. 根據更表資料 (s) 砌出呢份更嘅唯一「暗號」
+    const dateParts = s[0].split("-"); // s[0] 是 14-04-2026
+    const yyyymmdd = dateParts[2] + dateParts[1] + dateParts[0]; 
+    const generatedID = `${yyyymmdd}-${s[2]}-${s[1]}`; // 20260414-Name-Time
     
     const records = cachedData.records || [];
 
-    // 2. 攞住呢個暗號去 Record2 嘅 Index 8 (I 欄) 搵人
+    // 2. 喺紀錄庫入面「死認」呢個暗號
+    // 只要 Record2 嗰行嘅 I 欄 (r[8]) 同我砌出嚟嘅 generatedID 一模一樣，先算數
     const hasIn = records.some(r => {
-        const recordIDFromSheet = (r[8] || "").toString().trim();
-        return recordIDFromSheet === generatedID && r[3] === "翻工";
+        const rID = (r[8] || "").toString().trim();
+        return rID === generatedID && r[3] === "翻工";
     });
 
     const hasOut = records.some(r => {
-        const recordIDFromSheet = (r[8] || "").toString().trim();
-        return recordIDFromSheet === generatedID && r[3] === "收工";
+        const rID = (r[8] || "").toString().trim();
+        return rID === generatedID && r[3] === "收工";
     });
 
-    // 3. 根據結果鎖 Button
-    document.getElementById("selectedJobTitle").innerText = s[3] || s[4] || "未命名工作";
+    // 3. UI 顯示 (保持原樣)
+    document.getElementById("selectedJobTitle").innerText = s[3] || "未命名";
     const bIn = document.getElementById("btnIn");
     const bOut = document.getElementById("btnOut");
     
