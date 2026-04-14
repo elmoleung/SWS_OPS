@@ -343,36 +343,29 @@ window.renderUI = () => {
 window.selectJobFromList = (s) => {
     selectedSchedule = s;
     const uKey = (s[4] || "").trim();
-    const sp = parseDateStr(s[0]);
-    const sDateStr = `${sp[0]}-${sp[1]}-${sp[2]}`;
+    const records = (cachedData && cachedData.records) ? cachedData.records : [];
 
-    // 依然要檢查狀態，因為如果已經「收咗工」，個掣都係要鎖死，防止重複打卡
-    const records = cachedData.records || [];
+    // 直接跟返 renderUI 個邏輯：只對 uKey (RecordID)
     const hasIn = records.some(r => {
-        const rp = parseDateStr(r[0]);
         const rKey = (r[5] || "").trim();
-        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && rKey === uKey && r[3] === "翻工";
+        return rKey === uKey && r[3] === "翻工";
     });
 
     const hasOut = records.some(r => {
-        const rp = parseDateStr(r[0]);
         const rKey = (r[5] || "").trim();
-        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && rKey === uKey && r[3] === "收工";
+        return rKey === uKey && r[3] === "收工";
     });
 
     document.getElementById("selectedJobTitle").innerText = s[3];
     const bIn = document.getElementById("btnIn");
     const bOut = document.getElementById("btnOut");
     
-    // --- 修改部分：唔好鎖死「收工」掣 ---
-    
-    // 翻工掣：打咗就變灰
+    // 翻工掣狀態
     bIn.disabled = hasIn; 
     bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; 
     bIn.style.opacity = hasIn ? "0.5" : "1";
     
-    // 收工掣：除非「已經打過收工」，否則永遠係彩色 (disabled = false)
-    // 我哋唔喺呢度 check 佢有無打翻工
+    // 收工掣狀態
     bOut.disabled = hasOut; 
     bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; 
     bOut.style.opacity = hasOut ? "0.5" : "1";
