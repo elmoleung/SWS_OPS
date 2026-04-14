@@ -342,37 +342,34 @@ window.renderUI = () => {
 
 window.selectJobFromList = (s) => {
     selectedSchedule = s;
-    const uKey = (s[4] || "").trim();
-    const sp = parseDateStr(s[0]);
-    const sDateStr = `${sp[0]}-${sp[1]}-${sp[2]}`;
-
-    // 依然要檢查狀態，因為如果已經「收咗工」，個掣都係要鎖死，防止重複打卡
+    // s[4] 通常係你更表入面嘅 RecordID (2026xxxx-Name-Time)
+    const uKey = (s[4] || "").trim(); 
+    
+    // 喺所有緩存嘅紀錄入面搵 (唔好過濾日期，直接對 ID 就最準)
     const records = cachedData.records || [];
+
+    // 只要 RecordID 一樣，且 Type 係翻工，就代表已打翻工
+    // 假設你 Record2 份表 RecordID 係喺第 8 欄 (Index 8)，如果係第 5 欄就改做 r[5]
     const hasIn = records.some(r => {
-        const rp = parseDateStr(r[0]);
-        const rKey = (r[5] || "").trim();
-        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && rKey === uKey && r[3] === "翻工";
+        const rKey = (r[8] || "").trim() || (r[5] || "").trim(); // 同時兼容 index 8 或 5
+        return rKey === uKey && r[3] === "翻工";
     });
 
     const hasOut = records.some(r => {
-        const rp = parseDateStr(r[0]);
-        const rKey = (r[5] || "").trim();
-        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && rKey === uKey && r[3] === "收工";
+        const rKey = (r[8] || "").trim() || (r[5] || "").trim();
+        return rKey === uKey && r[3] === "收工";
     });
 
+    // UI 顯示
     document.getElementById("selectedJobTitle").innerText = s[3];
     const bIn = document.getElementById("btnIn");
     const bOut = document.getElementById("btnOut");
     
-    // --- 修改部分：唔好鎖死「收工」掣 ---
-    
-    // 翻工掣：打咗就變灰
+    // 淨係改呢度：如果 ID 對中咗，就鎖掣
     bIn.disabled = hasIn; 
     bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; 
     bIn.style.opacity = hasIn ? "0.5" : "1";
     
-    // 收工掣：除非「已經打過收工」，否則永遠係彩色 (disabled = false)
-    // 我哋唔喺呢度 check 佢有無打翻工
     bOut.disabled = hasOut; 
     bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; 
     bOut.style.opacity = hasOut ? "0.5" : "1";
@@ -380,38 +377,41 @@ window.selectJobFromList = (s) => {
     window.showBox('typeBox');
 };
 
-window.triggerCamera = (t) => {
-    // 1. 如果員工撳「收工」
-    if (t === '收工') {
-        const s = selectedSchedule;
-        const uKey = (s[4] || "").trim();
-        const sp = parseDateStr(s[0]);
-        const sDateStr = `${sp[0]}-${sp[1]}-${sp[2]}`;
-        
-        // 確保 cachedData 同 records 存在，費事全新 Account 報錯
-        const records = (cachedData && cachedData.records) ? cachedData.records : [];
-        
-        // 檢查係咪已經打咗「翻工」
-        const hasIn = records.some(r => {
-            const rp = parseDateStr(r[0]);
-            const rKey = (r[5] || "").trim();
-            // 對日期、對地點、對備註、對係咪「翻工」
-            return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && 
-                   rKey === uKey && 
-                   r[2] === s[3] && 
-                   r[3] === "翻工";
-        });
+window.selectJobFromList = (s) => {
+    selectedSchedule = s;
+    
+    // 1. 攞返呢份更表本身嘅 RecordID (由更表而嚟)
+    const uKey = (s[4] || "").trim(); 
+    const records = cachedData.records || [];
 
-        // 如果搵唔到今日呢份更嘅翻工紀錄
-        if (!hasIn) {
-            alert("⚠️ 系統搵唔到你呢份更嘅「翻工」紀錄，請先完成翻工打卡先可以打收工啊！");
-            return; 
-        }
-    }
+    // 2. 判斷邏輯：直接喺打卡紀錄入面搵有無 match 呢個 ID 嘅字眼
+    // 咁樣就算你 Record2 係用公式產生 ID，只要個字串內容一樣，佢就識鎖
+    const hasIn = records.some(r => {
+        // 檢查 Record2 入面所有欄位，睇吓有無邊一格包含咗呢個 RecordID
+        // 咁樣就唔使理你公式喺邊一欄，最穩陣
+        const rowString = r.join("|"); 
+        return rowString.includes(uKey) && r[3] === "翻工";
+    });
 
-    // 2. 通過檢查（或者係打翻工），先至開相機
-    clockType = t;
-    document.getElementById("cameraInput").click();
+    const hasOut = records.some(r => {
+        const rowString = r.join("|");
+        return rowString.includes(uKey) && r[3] === "收工";
+    });
+
+    // --- 以下係 UI 顯示，保持不變 ---
+    document.getElementById("selectedJobTitle").innerText = s[3];
+    const bIn = document.getElementById("btnIn");
+    const bOut = document.getElementById("btnOut");
+    
+    bIn.disabled = hasIn; 
+    bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; 
+    bIn.style.opacity = hasIn ? "0.5" : "1";
+    
+    bOut.disabled = hasOut; 
+    bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; 
+    bOut.style.opacity = hasOut ? "0.5" : "1";
+    
+    window.showBox('typeBox');
 };
 
 window.handleCapture = (input) => {
