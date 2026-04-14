@@ -340,42 +340,6 @@ window.renderUI = () => {
     document.getElementById("todaySchedules").innerHTML = h;
 };
 
-window.selectJobFromList = (s) => {
-    selectedSchedule = s;
-    // s[4] 通常係你更表入面嘅 RecordID (2026xxxx-Name-Time)
-    const uKey = (s[4] || "").trim(); 
-    
-    // 喺所有緩存嘅紀錄入面搵 (唔好過濾日期，直接對 ID 就最準)
-    const records = cachedData.records || [];
-
-    // 只要 RecordID 一樣，且 Type 係翻工，就代表已打翻工
-    // 假設你 Record2 份表 RecordID 係喺第 8 欄 (Index 8)，如果係第 5 欄就改做 r[5]
-    const hasIn = records.some(r => {
-        const rKey = (r[8] || "").trim() || (r[5] || "").trim(); // 同時兼容 index 8 或 5
-        return rKey === uKey && r[3] === "翻工";
-    });
-
-    const hasOut = records.some(r => {
-        const rKey = (r[8] || "").trim() || (r[5] || "").trim();
-        return rKey === uKey && r[3] === "收工";
-    });
-
-    // UI 顯示
-    document.getElementById("selectedJobTitle").innerText = s[3];
-    const bIn = document.getElementById("btnIn");
-    const bOut = document.getElementById("btnOut");
-    
-    // 淨係改呢度：如果 ID 對中咗，就鎖掣
-    bIn.disabled = hasIn; 
-    bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; 
-    bIn.style.opacity = hasIn ? "0.5" : "1";
-    
-    bOut.disabled = hasOut; 
-    bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; 
-    bOut.style.opacity = hasOut ? "0.5" : "1";
-    
-    window.showBox('typeBox');
-};
 
 window.selectJobFromList = (s) => {
     selectedSchedule = s;
