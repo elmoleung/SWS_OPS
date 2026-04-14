@@ -312,15 +312,14 @@ window.renderUI = () => {
             dayScheds.forEach(s => {
                 const uKey = (s[4] || "").trim(); 
                 
-                // 核心修正：只對 uKey (RecordID)，唔理日期
+                // 搵返呢兩段，將 [5] 改做 [8]
                 const hasOut = (cachedData.records || []).some(r => {
-                    const rKey = (r[5] || "").trim();
+                    const rKey = (r[8] || "").trim(); // 由 5 改做 8
                     return rKey === uKey && r[3] === "收工";
                 });
 
-                // 同理，如果之後要加 hasIn 檢查都可以跟呢個邏輯
                 const hasIn = (cachedData.records || []).some(r => {
-                    const rKey = (r[5] || "").trim();
+                    const rKey = (r[8] || "").trim(); // 由 5 改做 8
                     return rKey === uKey && r[3] === "翻工";
                 });
                 
@@ -352,12 +351,12 @@ window.selectJobFromList = (s) => {
 
     // 直接跟返 renderUI 個邏輯：只對 uKey (RecordID)
     const hasIn = records.some(r => {
-        const rKey = (r[5] || "").trim();
+        const rKey = (r[8] || "").trim();
         return rKey === uKey && r[3] === "翻工";
     });
 
     const hasOut = records.some(r => {
-        const rKey = (r[5] || "").trim();
+        const rKey = (r[8] || "").trim();
         return rKey === uKey && r[3] === "收工";
     });
 
@@ -389,7 +388,7 @@ window.triggerCamera = (t) => {
         // 核心修正：只要 RecordID 對中，而且係「翻工」，就俾佢打收工
         // 唔再 check 日期係咪 13 號定 14 號
         const hasIn = records.some(r => {
-            const rKey = (r[5] || "").trim();
+            const rKey = (r[8] || "").trim();
             return rKey === uKey && r[3] === "翻工";
         });
 
@@ -665,11 +664,8 @@ window.chooseRecordYM = (ym, safeId) => {
     logs.forEach(log => {
         // 1. 【核心：跨表搵原裝更表資料】必須「日期 + 人名 + 地點 + 備註」全部對中
 const s = (cachedData.allSchedules || []).find(x => {
-    const sp = parseDateStr(x[0]), lp = parseDateStr(log[7]);
-    const dateMatch = `${sp[0]}-${sp[1]}-${sp[2]}` === `${lp[0]}-${lp[1]}-${lp[2]}`;
-    const keyMatch = (x[4] || "").trim() === (log[5] || "").trim();
-    const locMatch = x[3] === log[2];
-    return dateMatch && keyMatch && locMatch;
+    // 直接拎更表嘅 ID (x[4]) 同 Record2 嘅 ID (log[8]) 嚟對就得
+    return (x[4] || "").trim() === (log[8] || "").trim();
 });
         
         // 2. 準備第一行要顯示嘅更表日期同時間 (s[0] 同 s[1])
