@@ -312,17 +312,13 @@ window.renderUI = () => {
             dayScheds.forEach(s => {
                 const uKey = (s[4] || "").trim(); 
                 
-                // 搵返呢兩段，將 [5] 改做 [8]
+                // 必須要有呢段，否則系統唔知邊個更次「已完更」
                 const hasOut = (cachedData.records || []).some(r => {
-                    const rKey = (r[8] || "").trim(); // 由 5 改做 8
-                    return rKey === uKey && r[3] === "收工";
+                    const rp = parseDateStr(r[0]), sp = parseDateStr(s[0]);
+                    const dateMatch = `${rp[0]}-${rp[1]}-${rp[2]}` === `${sp[0]}-${sp[1]}-${sp[2]}`;
+                    const keyMatch = (r[5] || "").trim() === uKey;
+                    return dateMatch && keyMatch && r[3] === "收工";
                 });
-
-                const hasIn = (cachedData.records || []).some(r => {
-                    const rKey = (r[8] || "").trim(); // 由 5 改做 8
-                    return rKey === uKey && r[3] === "翻工";
-                });
-                
 
                 const sParam = JSON.stringify(s).replace(/"/g, '&quot;');
                 h += `<div class="menu-btn" style="${hasOut ? 'opacity:0.6; pointer-events:none;' : ''}; display: flex; align-items: center; justify-content: space-between; padding: 15px;" onclick='window.selectJobFromList(${sParam})'>
@@ -347,29 +343,36 @@ window.renderUI = () => {
 window.selectJobFromList = (s) => {
     selectedSchedule = s;
     const uKey = (s[4] || "").trim();
-    const records = (cachedData && cachedData.records) ? cachedData.records : [];
+    const sp = parseDateStr(s[0]);
+    const sDateStr = `${sp[0]}-${sp[1]}-${sp[2]}`;
 
-    // 直接跟返 renderUI 個邏輯：只對 uKey (RecordID)
+    // 依然要檢查狀態，因為如果已經「收咗工」，個掣都係要鎖死，防止重複打卡
+    const records = cachedData.records || [];
     const hasIn = records.some(r => {
-        const rKey = (r[8] || "").trim();
-        return rKey === uKey && r[3] === "翻工";
+        const rp = parseDateStr(r[0]);
+        const rKey = (r[5] || "").trim();
+        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && rKey === uKey && r[3] === "翻工";
     });
 
     const hasOut = records.some(r => {
-        const rKey = (r[8] || "").trim();
-        return rKey === uKey && r[3] === "收工";
+        const rp = parseDateStr(r[0]);
+        const rKey = (r[5] || "").trim();
+        return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && rKey === uKey && r[3] === "收工";
     });
 
     document.getElementById("selectedJobTitle").innerText = s[3];
     const bIn = document.getElementById("btnIn");
     const bOut = document.getElementById("btnOut");
     
-    // 翻工掣狀態
+    // --- 修改部分：唔好鎖死「收工」掣 ---
+    
+    // 翻工掣：打咗就變灰
     bIn.disabled = hasIn; 
     bIn.innerText = hasIn ? "✅ 已完成翻工" : "🌅 翻工打卡"; 
     bIn.style.opacity = hasIn ? "0.5" : "1";
     
-    // 收工掣狀態
+    // 收工掣：除非「已經打過收工」，否則永遠係彩色 (disabled = false)
+    // 我哋唔喺呢度 check 佢有無打翻工
     bOut.disabled = hasOut; 
     bOut.innerText = hasOut ? "✅ 已完成收工" : "🌇 收工打卡"; 
     bOut.style.opacity = hasOut ? "0.5" : "1";
@@ -381,24 +384,32 @@ window.triggerCamera = (t) => {
     // 1. 如果員工撳「收工」
     if (t === '收工') {
         const s = selectedSchedule;
-        const uKey = (s[4] || "").trim(); // 攞返當前揀中嗰份更嘅 ID
+        const uKey = (s[4] || "").trim();
+        const sp = parseDateStr(s[0]);
+        const sDateStr = `${sp[0]}-${sp[1]}-${sp[2]}`;
         
+        // 確保 cachedData 同 records 存在，費事全新 Account 報錯
         const records = (cachedData && cachedData.records) ? cachedData.records : [];
         
-        // 核心修正：只要 RecordID 對中，而且係「翻工」，就俾佢打收工
-        // 唔再 check 日期係咪 13 號定 14 號
+        // 檢查係咪已經打咗「翻工」
         const hasIn = records.some(r => {
-            const rKey = (r[8] || "").trim();
-            return rKey === uKey && r[3] === "翻工";
+            const rp = parseDateStr(r[0]);
+            const rKey = (r[5] || "").trim();
+            // 對日期、對地點、對備註、對係咪「翻工」
+            return `${rp[0]}-${rp[1]}-${rp[2]}` === sDateStr && 
+                   rKey === uKey && 
+                   r[2] === s[3] && 
+                   r[3] === "翻工";
         });
 
+        // 如果搵唔到今日呢份更嘅翻工紀錄
         if (!hasIn) {
             alert("⚠️ 系統搵唔到你呢份更嘅「翻工」紀錄，請先完成翻工打卡先可以打收工啊！");
             return; 
         }
     }
 
-    // 2. 通過檢查，先至開相機
+    // 2. 通過檢查（或者係打翻工），先至開相機
     clockType = t;
     document.getElementById("cameraInput").click();
 };
@@ -664,8 +675,11 @@ window.chooseRecordYM = (ym, safeId) => {
     logs.forEach(log => {
         // 1. 【核心：跨表搵原裝更表資料】必須「日期 + 人名 + 地點 + 備註」全部對中
 const s = (cachedData.allSchedules || []).find(x => {
-    // 直接拎更表嘅 ID (x[4]) 同 Record2 嘅 ID (log[8]) 嚟對就得
-    return (x[4] || "").trim() === (log[8] || "").trim();
+    const sp = parseDateStr(x[0]), lp = parseDateStr(log[7]);
+    const dateMatch = `${sp[0]}-${sp[1]}-${sp[2]}` === `${lp[0]}-${lp[1]}-${lp[2]}`;
+    const keyMatch = (x[4] || "").trim() === (log[5] || "").trim();
+    const locMatch = x[3] === log[2];
+    return dateMatch && keyMatch && locMatch;
 });
         
         // 2. 準備第一行要顯示嘅更表日期同時間 (s[0] 同 s[1])
